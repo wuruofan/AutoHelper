@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ClickHelper</string>
+    <string name="permission_hint">开启该权限才能正常使用模拟点击功能</string>
+</resources>

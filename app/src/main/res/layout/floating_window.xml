@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/float_layout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    tools:ignore="HardcodedText">
+
+    <ImageView
+        android:id="@+id/iv_main"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/itachi_s_mangekyou"
+        android:contentDescription="TODO" />
+
+    <LinearLayout
+        android:id="@+id/layout_more_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/iv_main"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/iv_run"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="start/stop"
+            android:src="@drawable/kakashi_s_mangekyou"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/iv_screenshot"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="exit"
+            android:src="@drawable/power_moon" />
+
+    </LinearLayout>
+</RelativeLayout>

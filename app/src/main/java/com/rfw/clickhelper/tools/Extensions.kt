@@ -1,4 +1,4 @@
-package com.rfw.clickhelper.tool
+package com.rfw.clickhelper.tools
 
 import android.util.Log
 import com.rfw.clickhelper.MainApp

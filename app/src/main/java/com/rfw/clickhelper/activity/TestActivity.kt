@@ -1,38 +1,26 @@
 package com.rfw.clickhelper.activity
 
 
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
 import android.net.Uri
 import android.os.*
 import android.util.Log
-import android.view.*
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.Observer
-import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.chad.library.adapter.base.listener.OnItemDragListener
-import com.chad.library.adapter.base.listener.OnItemSwipeListener
-import com.chad.library.adapter.base.viewholder.BaseViewHolder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import com.rfw.clickhelper.MainApp
 import com.rfw.clickhelper.R
-import com.rfw.clickhelper.adapter.ClickConfigAdapter
 import com.rfw.clickhelper.algorithm.pHash
-import com.rfw.clickhelper.data.model.ClickArea
 import com.rfw.clickhelper.data.model.ClickAreaModel
-import com.rfw.clickhelper.data.viewmodel.ClickViewModel
 import com.rfw.clickhelper.helper.MediaProjectionHelper
 import com.rfw.clickhelper.service.ClickAccessibilityService
 import com.rfw.clickhelper.service.FloatWindowService
@@ -44,24 +32,26 @@ import com.rfw.clickhelper.tools.PhotoContracts
 
 
 @SuppressLint("WrongConstant")
-class MainActivity : AppCompatActivity() {
+class TestActivity : AppCompatActivity() {
+    private lateinit var doodleImageView: ImageView
+    private lateinit var captureImageView: ImageView
+    private lateinit var textView: TextView
 
     private lateinit var mediaProjectionHelper: MediaProjectionHelper
 
     private var doodleHash = 0L
     private var captureHash = 0L
 
-    private val clickViewModel: ClickViewModel by lazy {
-        ClickViewModel((application as MainApp).repository)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_test)
+
+        supportActionBar?.title = "测试"
 
         mediaProjectionHelper = MediaProjectionHelper.initInstance(this) { bitmap ->
             Handler(Looper.getMainLooper()).postDelayed({
                 if (bitmap != null) {
+                    captureImageView.setImageBitmap(cropDoodleRectBitmap(bitmap))
                     captureHash = pHash.dctImageHash(bitmap, false)
                     Log.w(
                         TAG,
@@ -69,6 +59,7 @@ class MainActivity : AppCompatActivity() {
                     )
 
                     val distance = pHash.hammingDistance(doodleHash, captureHash)
+                    textView.text = distance.toString()
 
                     if (pHash.isSimilar(distance)) {
                         Log.w(TAG, "hammingDistance=$distance, is similar, try to click it!")
@@ -90,102 +81,12 @@ class MainActivity : AppCompatActivity() {
         }
         mediaProjectionHelper.onRestoreInstanceState(savedInstanceState)
 
-
-        // 拖拽监听
-        val listener: OnItemDragListener = object : OnItemDragListener {
-            override fun onItemDragStart(viewHolder: RecyclerView.ViewHolder, pos: Int) {
-                Log.d(TAG, "drag start")
-                val holder = viewHolder as BaseViewHolder
-
-                // 开始时，item背景色变化，demo这里使用了一个动画渐变，使得自然
-                val startColor = Color.WHITE
-                val endColor = Color.rgb(245, 245, 245)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    val v = ValueAnimator.ofArgb(startColor, endColor)
-                    v.addUpdateListener { animation -> holder.itemView.setBackgroundColor(animation.animatedValue as Int) }
-                    v.duration = 300
-                    v.start()
-                }
-            }
-
-            override fun onItemDragMoving(
-                source: RecyclerView.ViewHolder,
-                from: Int,
-                target: RecyclerView.ViewHolder,
-                to: Int
-            ) {
-                Log.d(
-                    TAG,
-                    "move from: " + source.adapterPosition + " to: " + target.adapterPosition
-                )
-            }
-
-            override fun onItemDragEnd(viewHolder: RecyclerView.ViewHolder, pos: Int) {
-                Log.d(TAG, "drag end: $pos")
-                val holder = viewHolder as BaseViewHolder
-                // 结束时，item背景色变化，demo这里使用了一个动画渐变，使得自然
-                val startColor = Color.rgb(245, 245, 245)
-                val endColor = Color.WHITE
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    val v = ValueAnimator.ofArgb(startColor, endColor)
-                    v.addUpdateListener { animation -> holder.itemView.setBackgroundColor(animation.animatedValue as Int) }
-                    v.duration = 300
-                    v.start()
-                }
-
-            }
-        }
-
-        // 侧滑监听
-        val onItemSwipeListener: OnItemSwipeListener = object : OnItemSwipeListener {
-            override fun onItemSwipeStart(viewHolder: RecyclerView.ViewHolder, pos: Int) {
-                Log.d(TAG, "view swiped start: $pos")
-                val holder = viewHolder as BaseViewHolder
-            }
-
-            override fun clearView(viewHolder: RecyclerView.ViewHolder, pos: Int) {
-                Log.d(TAG, "View reset: $pos")
-                val holder = viewHolder as BaseViewHolder
-            }
-
-            override fun onItemSwiped(viewHolder: RecyclerView.ViewHolder, pos: Int) {
-                Log.d(TAG, "View Swiped: $pos")
-                clickViewModel.delete(pos)
-            }
-
-            override fun onItemSwipeMoving(
-                canvas: Canvas,
-                viewHolder: RecyclerView.ViewHolder,
-                dX: Float,
-                dY: Float,
-                isCurrentlyActive: Boolean
-            ) {
-                canvas.drawColor(
-                    ContextCompat.getColor(
-                        this@MainActivity,
-                        R.color.color_light_blue
-                    )
-                )
-            }
-        }
-
-        val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        var clickConfigAdapter = ClickConfigAdapter()
-        recyclerView.adapter = clickConfigAdapter
-
-        clickConfigAdapter.draggableModule.isSwipeEnabled = true
-        clickConfigAdapter.draggableModule.isDragEnabled = true
-        clickConfigAdapter.draggableModule.setOnItemDragListener(listener)
-        clickConfigAdapter.draggableModule.setOnItemSwipeListener(onItemSwipeListener)
-        clickConfigAdapter.draggableModule.itemTouchHelperCallback
-            .setSwipeMoveFlags(ItemTouchHelper.START or ItemTouchHelper.END)
-
-        clickViewModel.allData.observe(this, Observer { allData ->
-            clickConfigAdapter.setList(allData)
-        })
+        doodleImageView = findViewById(R.id.doodle_image_view)
+        captureImageView = findViewById(R.id.capture_image_view)
+        textView = findViewById(R.id.tv_similarity)
 
         val layout = findViewById<CoordinatorLayout>(R.id.root_layout)
+
 
         findViewById<FloatingActionButton>(R.id.fab_run).setOnClickListener {
             if (AccessibilityUtils.isPermissionGranted(
@@ -214,18 +115,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val doodleActivityLaunch =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                if (it.resultCode == RESULT_OK) {
-                    val intent = it.data
-                    val clickArea = intent?.getSerializableExtra("data") as? ClickArea
-                    if (clickArea != null) {
-                        clickViewModel.insert(clickArea)
-                    }
-                }
-
-            }
-
         // 选择图片
         val selectPhoto =
             registerForActivityResult(PhotoContracts.SelectPhotoContract()) { uri: Uri? ->
@@ -240,8 +129,10 @@ class MainActivity : AppCompatActivity() {
 //                }
                     val intent = Intent(this, SnapshotDoodleActivity::class.java)
                     intent.putExtra(SnapshotDoodleActivity.INTENT_KEY_IMAGE_URI, uri.toString())
-//                    startActivity(intent)
-                    doodleActivityLaunch.launch(intent)
+                    startActivity(intent)
+//                registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+//
+//                }
                 } else {
                     Toast.makeText(this, "您没有选择任何图片", Toast.LENGTH_SHORT).show()
                 }
@@ -253,27 +144,21 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<FloatingActionButton>(R.id.fab_help).setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                setDefaultBrowser(this)
             }
         }
 
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.activity_main_menu, menu)
-        return super.onCreateOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.menu_test -> {
-                startActivity(Intent(this, TestActivity::class.java))
-            }
-        }
-        return super.onOptionsItemSelected(item)
     }
 
     override fun onResume() {
         Log.w(TAG, "onResume: ${ClickAreaModel.bitmap}")
+
+        ClickAreaModel.bitmap?.let {
+            doodleImageView.setImageBitmap(it)
+            doodleImageView.invalidate()
+            doodleHash = pHash.dctImageHash(it, false)
+            Log.w(TAG, "onResume: ${it.isRecycled}, doodleHash=$doodleHash")
+        }
 
         super.onResume()
     }
@@ -315,4 +200,26 @@ class MainActivity : AppCompatActivity() {
 
     /********************** test code **********************/
 
+    @RequiresApi(Build.VERSION_CODES.Q)
+    fun setDefaultBrowser(activity: Activity) {
+        val roleManager: RoleManager = activity.getSystemService(RoleManager::class.java)
+        if (roleManager.isRoleAvailable(RoleManager.ROLE_BROWSER) && !roleManager.isRoleHeld(
+                RoleManager.ROLE_BROWSER
+            )
+        ) {
+            Log.w(TAG, "start activity now!")
+            activity.startActivityForResult(
+                roleManager.createRequestRoleIntent(RoleManager.ROLE_BROWSER),
+                0x5222
+            )
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == 0x5222) {
+            Log.w(TAG, "onActivityResult: $resultCode, $data")
+        }
+    }
 }

@@ -20,8 +20,8 @@ import com.rfw.clickhelper.MainApp
 import com.rfw.clickhelper.R
 import com.rfw.clickhelper.helper.MediaProjectionHelper
 import com.rfw.clickhelper.helper.RotationWatchHelper
-import com.rfw.clickhelper.tool.DisplayUtils
-import com.rfw.clickhelper.tool.Extensions.TAG
+import com.rfw.clickhelper.tools.DisplayUtils
+import com.rfw.clickhelper.tools.Extensions.TAG
 import kotlin.math.absoluteValue
 
 class FloatWindowService : Service() {
@@ -31,6 +31,7 @@ class FloatWindowService : Service() {
     private lateinit var screenSize: Point
 
     var isLandscape = false
+
     private val rotationWatcher = RotationWatchHelper {
         isLandscape = it == Surface.ROTATION_90 || it == Surface.ROTATION_270
         Log.w(TAG, "RotationWatcher orientation: $it, isLandscape: $isLandscape")

@@ -1,15 +1,17 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
+    id 'kotlin-kapt'
+//    id 'kotlin-parcelize'
 }
 
 android {
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         applicationId "com.rfw.clickhelper"
         minSdk 27
-        targetSdk 32
+        targetSdk 33
         versionCode 1
         versionName "1.0"
 
@@ -28,14 +30,35 @@ android {
     }
     kotlinOptions {
         jvmTarget = '1.8'
+
+        // Inheritance from an interface with '@JvmDefault' members is only allowed with -Xjvm-default option
+        freeCompilerArgs += ["-Xjvm-default=all",]
     }
 }
 
-dependencies {
-    implementation 'com.github.bumptech.glide:glide:4.14.2'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.14.2'
+def glide_version = "4.14.2"
+def room_version = "2.5.0"
+def lifecycle_version = "2.5.1"
 
-//    implementation 'com.oguzdev:CircularFloatingActionMenu:1.0.2'
+dependencies {
+
+    implementation("com.github.bumptech.glide:glide:$glide_version")
+    annotationProcessor("com.github.bumptech.glide:compiler:$glide_version")
+
+    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:3.0.10'
+
+    // Room components
+//    implementation("androidx.room:room-runtime:$room_version")
+//    annotationProcessor("androidx.room:room-compiler:$room_version")
+    implementation "androidx.room:room-ktx:$room_version"
+    kapt "androidx.room:room-compiler:$room_version"
+    androidTestImplementation "androidx.room:room-testing:$room_version"
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version")
+
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.4.1'
     implementation 'com.google.android.material:material:1.6.0'

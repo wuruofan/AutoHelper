@@ -4,7 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import com.rfw.clickhelper.tool.Extensions.TAG
+import com.rfw.clickhelper.tools.Extensions.TAG
 
 class ClickAccessibilityService : AccessibilityService() {
 

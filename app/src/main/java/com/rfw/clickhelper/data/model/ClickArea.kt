@@ -1,11 +1,14 @@
-package com.rfw.clickhelper.model
+package com.rfw.clickhelper.data.model
 
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 
-class ClickArea {
+
+class ClickArea : java.io.Serializable {
     private val lineList: ArrayList<LineInfo> = ArrayList()
+    var imagePath: String? = null
+//    var outRect: Rect? = null
 
     fun new(line: LineInfo) {
         reset()
@@ -22,6 +25,10 @@ class ClickArea {
 
     fun pop() {
         lineList.removeLast()
+    }
+
+    fun isEmpty(): Boolean {
+        return lineList.isEmpty()
     }
 
     fun draw(canvas: Canvas, painter: Paint) {
@@ -74,9 +81,27 @@ class ClickArea {
         return lineList.random().randomPoint()
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (other !is ClickArea)
+            return false
+
+        return lineList.size == other.lineList.size
+                && imagePath?.equals(other.imagePath) ?: false
+    }
+
+    override fun toString(): String {
+        return super.toString()
+    }
+
+    override fun hashCode(): Int {
+        var result = lineList.hashCode()
+        result = 31 * result + (imagePath?.hashCode() ?: 0)
+        return result
+    }
+
     /******************* inner class *******************/
 
-    class LineInfo constructor(startPoint: PointInfo? = null) {
+    class LineInfo constructor(startPoint: PointInfo? = null) : java.io.Serializable {
         private val pointList: ArrayList<PointInfo> = ArrayList()
 
         init {
@@ -137,5 +162,5 @@ class ClickArea {
         }
     }
 
-    data class PointInfo(val x: Float, val y: Float)
+    data class PointInfo(val x: Float, val y: Float) : java.io.Serializable
 }

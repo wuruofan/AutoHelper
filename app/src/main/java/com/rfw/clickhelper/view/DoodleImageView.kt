@@ -11,9 +11,14 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import com.rfw.clickhelper.R
-import com.rfw.clickhelper.model.ClickArea
-import com.rfw.clickhelper.model.ClickAreaModel
-import com.rfw.clickhelper.tool.Extensions.TAG
+import com.rfw.clickhelper.data.model.ClickArea
+import com.rfw.clickhelper.tools.Extensions.TAG
+import com.rfw.clickhelper.tools.FileUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import java.util.*
 
 
 /**
@@ -22,13 +27,17 @@ import com.rfw.clickhelper.tool.Extensions.TAG
 class DoodleImageView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : androidx.appcompat.widget.AppCompatImageView(context, attrs, defStyleAttr) {
-    private val lineList: ArrayList<ClickArea.LineInfo> = ArrayList()
     private val painter = Paint()
 
     private val rectPainter = Paint()
 
     private lateinit var currentLine: ClickArea.LineInfo
     private lateinit var outlineRect: Rect
+
+    var clickArea: ClickArea? = null
+
+    private val job by lazy { Job() }
+    private val ioScope by lazy { CoroutineScope(Dispatchers.IO + job) }
 
     init {
         configPaint()
@@ -43,6 +52,15 @@ class DoodleImageView @JvmOverloads constructor(
         rectPainter.color = resources.getColor(R.color.snow_purple, null)
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+    }
+
+    override fun onDetachedFromWindow() {
+        job.cancel()
+        super.onDetachedFromWindow()
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (event != null) {
@@ -51,7 +69,10 @@ class DoodleImageView @JvmOverloads constructor(
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     currentLine = ClickArea.LineInfo()
-                    ClickAreaModel.clickArea.new(currentLine)
+                    if (clickArea == null) {
+                        clickArea = ClickArea()
+                    }
+                    clickArea?.new(currentLine)
                     drawPointOfLine(currentLine, point)
                     return true
                 }
@@ -61,6 +82,21 @@ class DoodleImageView @JvmOverloads constructor(
                 }
                 MotionEvent.ACTION_UP -> {
                     drawPointOfLine(currentLine, point)
+
+                    ioScope.launch {
+                        val file = FileUtils.writeInnerFile(
+                            this@DoodleImageView.context,
+                            "image",
+                            "${UUID.randomUUID()}.jpg"
+                        ) {
+                            val bitmap = doodledBitmap()
+                            bitmap?.compress(Bitmap.CompressFormat.JPEG, 100, it)
+                        }
+
+                        if (file.exists() && file.length() > 0) {
+                            clickArea?.imagePath = file.absolutePath
+                        }
+                    }
                 }
             }
         }
@@ -74,13 +110,14 @@ class DoodleImageView @JvmOverloads constructor(
         if (canvas == null)
             return
 
-        ClickAreaModel.clickArea.draw(canvas, painter)
+        clickArea?.let {
+            it.draw(canvas, painter)
+            outlineRect = it.outlineRect()
 
-        outlineRect = ClickAreaModel.clickArea.outlineRect()
-
-        if (outlineRect.left != -1) {
-            canvas.drawRect(outlineRect, rectPainter)
+            if (outlineRect.left != -1) {
+                canvas.drawRect(outlineRect, rectPainter)
 //            Log.w(TAG, "onDraw outlineRect=$outlineRect")
+            }
         }
     }
 
@@ -98,7 +135,9 @@ class DoodleImageView @JvmOverloads constructor(
     }
 
     private fun cropDoodleRectBitmap(bitmap: Bitmap): Bitmap? {
-        val rect = ClickAreaModel.clickArea.outlineRect()
+        if (clickArea == null) return null
+
+        val rect = clickArea!!.outlineRect()
         if (rect.left == -1) {
             return null
         }

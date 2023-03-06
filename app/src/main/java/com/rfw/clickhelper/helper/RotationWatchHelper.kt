@@ -5,7 +5,7 @@ import android.os.IBinder
 import android.os.RemoteException
 import android.util.Log
 import android.view.IRotationWatcher
-import com.rfw.clickhelper.tool.Extensions.TAG
+import com.rfw.clickhelper.tools.Extensions.TAG
 import java.lang.reflect.Method
 
 typealias RotationWatchCallback = (Int) -> Unit

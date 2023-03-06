@@ -1,4 +1,4 @@
-package com.rfw.clickhelper.tool
+package com.rfw.clickhelper.tools
 
 import android.content.Context
 import android.content.Intent
@@ -12,7 +12,7 @@ import android.webkit.MimeTypeMap
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.annotation.CallSuper
 import androidx.core.content.contentValuesOf
-import com.rfw.clickhelper.tool.Extensions.TAG
+import com.rfw.clickhelper.tools.Extensions.TAG
 import java.io.File
 
 /**

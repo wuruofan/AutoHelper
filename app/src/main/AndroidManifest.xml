@@ -47,8 +47,13 @@
             android:name=".activity.SnapshotDoodleActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:windowSoftInputMode="stateHidden"
-            android:exported="true"></activity>
+            android:exported="false" />
 
+        <activity
+            android:name=".activity.TestActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:windowSoftInputMode="stateHidden"
+            android:exported="false" />
 
         <service
             android:name=".service.ClickAccessibilityService"

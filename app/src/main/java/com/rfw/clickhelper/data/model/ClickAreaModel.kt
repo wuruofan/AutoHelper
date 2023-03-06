@@ -1,4 +1,4 @@
-package com.rfw.clickhelper.model
+package com.rfw.clickhelper.data.model
 
 import android.graphics.Bitmap
 

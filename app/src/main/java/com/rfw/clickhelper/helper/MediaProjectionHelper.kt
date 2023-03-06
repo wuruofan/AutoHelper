@@ -21,8 +21,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.UiThread
 import com.rfw.clickhelper.service.FloatWindowService
-import com.rfw.clickhelper.tool.DisplayUtils
-import com.rfw.clickhelper.tool.Extensions.TAG
+import com.rfw.clickhelper.tools.DisplayUtils
+import com.rfw.clickhelper.tools.Extensions.TAG
 import java.lang.ref.WeakReference
 
 typealias ImageAvailableCallback = (Bitmap?) -> Unit
@@ -218,6 +218,7 @@ class MediaProjectionHelper private constructor(
         var instance: MediaProjectionHelper? = null
             private set
 
+        // 单例参考：https://juejin.cn/post/6844903590545326088
         fun initInstance(
             activity: ComponentActivity,
             @UiThread callback: ImageAvailableCallback

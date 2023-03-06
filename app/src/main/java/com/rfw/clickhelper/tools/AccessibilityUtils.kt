@@ -1,4 +1,4 @@
-package com.rfw.clickhelper.tool
+package com.rfw.clickhelper.tools
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
@@ -10,7 +10,7 @@ import android.provider.Settings
 import android.text.TextUtils
 import android.text.TextUtils.SimpleStringSplitter
 import android.util.Log
-import com.rfw.clickhelper.tool.Extensions.TAG
+import com.rfw.clickhelper.tools.Extensions.TAG
 
 object AccessibilityUtils {
 

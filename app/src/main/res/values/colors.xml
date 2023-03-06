@@ -11,4 +11,6 @@
     <color name="light_pink">#E4C6D0</color>
     <color name="snow_purple">#B0A4E3</color>
     <color name="stone_blue">#003371</color>
+
+    <color name="color_light_blue">#00DDB6</color>
 </resources>

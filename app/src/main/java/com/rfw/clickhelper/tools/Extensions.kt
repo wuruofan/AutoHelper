@@ -2,6 +2,10 @@ package com.rfw.clickhelper.tools
 
 import android.util.Log
 import com.rfw.clickhelper.MainApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 object Extensions {
     /**
@@ -39,5 +43,23 @@ object Extensions {
 
     fun Float.dp(): Int {
         return DisplayUtils.dip2px(MainApp.appContext, this)
+    }
+
+
+    /**
+     *  [协程实现定时任务](https://stackoverflow.com/questions/54827455/how-to-implement-timer-with-kotlin-coroutines)
+     */
+    fun CoroutineScope.launchPeriodicAsync(
+        repeatMillis: Long,
+        action: suspend () -> Unit
+    ) = this.async {
+        if (repeatMillis > 0) {
+            while (isActive) {
+                action()
+                delay(repeatMillis)
+            }
+        } else {
+            action()
+        }
     }
 }

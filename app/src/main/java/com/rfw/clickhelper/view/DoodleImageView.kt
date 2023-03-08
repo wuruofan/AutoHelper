@@ -35,6 +35,7 @@ class DoodleImageView @JvmOverloads constructor(
     private lateinit var outlineRect: Rect
 
     var clickArea: ClickArea? = null
+    private lateinit var imageName: String
 
     private val job by lazy { Job() }
     private val ioScope by lazy { CoroutineScope(Dispatchers.IO + job) }
@@ -71,7 +72,11 @@ class DoodleImageView @JvmOverloads constructor(
                     currentLine = ClickArea.LineInfo()
                     if (clickArea == null) {
                         clickArea = ClickArea()
+                        imageName = "${UUID.randomUUID()}.jpg"
+                    } else {
+//                        TODO("edit click area!")
                     }
+
                     clickArea?.new(currentLine)
                     drawPointOfLine(currentLine, point)
                     return true
@@ -87,10 +92,11 @@ class DoodleImageView @JvmOverloads constructor(
                         val file = FileUtils.writeInnerFile(
                             this@DoodleImageView.context,
                             "image",
-                            "${UUID.randomUUID()}.jpg"
+                            imageName
                         ) {
                             val bitmap = doodledBitmap()
                             bitmap?.compress(Bitmap.CompressFormat.JPEG, 100, it)
+                            clickArea?.bitmap = bitmap
                         }
 
                         if (file.exists() && file.length() > 0) {

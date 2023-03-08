@@ -1,5 +1,6 @@
 package com.rfw.clickhelper.data.model
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
@@ -9,6 +10,12 @@ class ClickArea : java.io.Serializable {
     private val lineList: ArrayList<LineInfo> = ArrayList()
     var imagePath: String? = null
 //    var outRect: Rect? = null
+
+    @Transient
+    var bitmap: Bitmap? = null
+
+    @Transient
+    var phash = 0L
 
     fun new(line: LineInfo) {
         reset()

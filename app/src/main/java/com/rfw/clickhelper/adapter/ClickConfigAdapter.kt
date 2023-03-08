@@ -14,14 +14,20 @@ class ClickConfigAdapter : BaseQuickAdapter<ClickData, BaseViewHolder>(R.layout.
     override fun convert(holder: BaseViewHolder, item: ClickData) {
         holder.setText(R.id.tv_item_index, item.index.toString())
 
-        item.clickArea?.imagePath?.let {
-            Glide.with(holder.itemView).load(it)
-                .apply(RequestOptions.bitmapTransform(RoundedCorners(40)))
-                .into(holder.getView(R.id.iv_click_area))
-        }
+        item.clickArea.run {
+            if (bitmap != null) {
+                Glide.with(holder.itemView).load(bitmap)
+                    .apply(RequestOptions.bitmapTransform(RoundedCorners(24)))
+                    .into(holder.getView(R.id.iv_click_area))
+            } else {
+                imagePath?.let {
+                    Glide.with(holder.itemView).load(it)
+                        .apply(RequestOptions.bitmapTransform(RoundedCorners(24)))
+                        .into(holder.getView(R.id.iv_click_area))
+                }
+            }
 
-        item.clickArea?.let {
-            holder.setText(R.id.tv_config_desc, it.outlineRect().toString())
+            holder.setText(R.id.tv_config_desc, outlineRect().toString())
         }
     }
 }

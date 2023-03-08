@@ -7,7 +7,10 @@ import androidx.lifecycle.viewModelScope
 import com.rfw.clickhelper.data.ClickRepository
 import com.rfw.clickhelper.data.db.entity.ClickData
 import com.rfw.clickhelper.data.model.ClickArea
+import com.rfw.clickhelper.tools.FileUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ClickViewModel(private val repository: ClickRepository) : ViewModel() {
 
@@ -40,6 +43,10 @@ class ClickViewModel(private val repository: ClickRepository) : ViewModel() {
             val clickData = allData.value?.get(id)
             if (clickData != null) {
                 repository.delete(clickData)
+
+                withContext(Dispatchers.IO) {
+                    clickData.clickArea.imagePath?.let { FileUtils.delete(it) }
+                }
             }
         }
     }

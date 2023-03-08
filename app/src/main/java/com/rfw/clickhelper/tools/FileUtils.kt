@@ -42,4 +42,9 @@ object FileUtils {
 
         return file
     }
+
+    fun delete(filePath: String): Boolean {
+        val file = File(filePath)
+        return file.delete()
+    }
 }

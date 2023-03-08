@@ -4,10 +4,10 @@ package com.rfw.clickhelper.activity
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Rect
 import android.net.Uri
 import android.os.*
 import android.util.Log
@@ -32,7 +32,9 @@ import com.rfw.clickhelper.adapter.ClickConfigAdapter
 import com.rfw.clickhelper.algorithm.pHash
 import com.rfw.clickhelper.data.model.ClickArea
 import com.rfw.clickhelper.data.model.ClickAreaModel
+import com.rfw.clickhelper.data.model.ClickTask
 import com.rfw.clickhelper.data.viewmodel.ClickViewModel
+import com.rfw.clickhelper.helper.ImageReadyCallback
 import com.rfw.clickhelper.helper.MediaProjectionHelper
 import com.rfw.clickhelper.service.ClickAccessibilityService
 import com.rfw.clickhelper.service.FloatWindowService
@@ -41,6 +43,9 @@ import com.rfw.clickhelper.tools.AccessibilityUtils.click
 import com.rfw.clickhelper.tools.Extensions.TAG
 import com.rfw.clickhelper.tools.FloatWindowUtils
 import com.rfw.clickhelper.tools.PhotoContracts
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 
 @SuppressLint("WrongConstant")
@@ -55,41 +60,72 @@ class MainActivity : AppCompatActivity() {
         ClickViewModel((application as MainApp).repository)
     }
 
+    private var currentClickTask: ClickTask? = null
+    var lastClickCheck = false
+
+    private val mainScope = MainScope()
+
+    private val imageReadyCallback: ImageReadyCallback = { bitmap ->
+        mainScope.launch {
+            val clickTask = currentClickTask ?: return@launch
+
+            Log.w(TAG, "next task: $clickTask, last click check: $lastClickCheck")
+
+            if (bitmap != null) {
+                val doodleBitmap =
+                    cropDoodleRectBitmap(bitmap, clickTask.currentClickArea.outlineRect())
+                val captureHash = pHash.dctImageHash(doodleBitmap, false)
+                val targetHash = clickTask.currentDstPHash
+
+                Log.w(
+                    TAG,
+                    "bitmap: ${bitmap.width} x ${bitmap.height}, captureHash=$captureHash, targetHash=$targetHash"
+                )
+
+                bitmap.recycle()
+                doodleBitmap?.recycle()
+
+                val distance = pHash.hammingDistance(captureHash, targetHash)
+
+                if (pHash.isSimilar(distance)) {
+                    Log.w(TAG, "hammingDistance=$distance, is similar, try to click it!")
+
+                    val point = clickTask.currentClickPoint
+                    Log.w(TAG, "get random click point: $point")
+
+//                    delay(100)
+                    ClickAccessibilityService.accessibilityService?.click(point.x, point.y)
+
+                    lastClickCheck = true
+
+                    Toast.makeText(
+                        MainApp.appContext,
+                        "识别成功：${clickTask.currentClickArea.outlineRect()}, 点击：$point}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    // 检查上一次点击事件是否成功
+                    if (lastClickCheck) {
+                        Log.i(TAG, "last click success, do next!")
+
+                        clickTask.runningCount++
+                        lastClickCheck = false
+                    }
+                }
+            } else {
+                Log.d(TAG, "image == null")
+            }
+
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        mediaProjectionHelper = MediaProjectionHelper.initInstance(this) { bitmap ->
-            Handler(Looper.getMainLooper()).postDelayed({
-                if (bitmap != null) {
-                    captureHash = pHash.dctImageHash(bitmap, false)
-                    Log.w(
-                        TAG,
-                        "bitmap: ${bitmap.width} x ${bitmap.height}, captureHash=$captureHash"
-                    )
-
-                    val distance = pHash.hammingDistance(doodleHash, captureHash)
-
-                    if (pHash.isSimilar(distance)) {
-                        Log.w(TAG, "hammingDistance=$distance, is similar, try to click it!")
-
-                        val point = ClickAreaModel.clickArea.randomPoint()
-                        Log.w(TAG, "get random click point: $point")
-                        ClickAccessibilityService.accessibilityService?.click(point.x, point.y)
-                    }
-                } else {
-                    Log.d(TAG, "image == null")
-                }
-
-                Toast.makeText(
-                    this,
-                    "截图完成: ${this.resources.configuration.orientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }, 1000)
-        }
+        mediaProjectionHelper = MediaProjectionHelper.initInstance(this)
         mediaProjectionHelper.onRestoreInstanceState(savedInstanceState)
-
+        mediaProjectionHelper.setImageReadyCallback(imageReadyCallback)
 
         // 拖拽监听
         val listener: OnItemDragListener = object : OnItemDragListener {
@@ -183,6 +219,7 @@ class MainActivity : AppCompatActivity() {
 
         clickViewModel.allData.observe(this, Observer { allData ->
             clickConfigAdapter.setList(allData)
+            currentClickTask = ClickTask(allData)
         })
 
         val layout = findViewById<CoordinatorLayout>(R.id.root_layout)
@@ -280,6 +317,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         mediaProjectionHelper.destroy()
+        mainScope.cancel()
         super.onDestroy()
     }
 
@@ -288,8 +326,7 @@ class MainActivity : AppCompatActivity() {
         mediaProjectionHelper.onSaveInstanceState(outState)
     }
 
-    private fun cropDoodleRectBitmap(bitmap: Bitmap?): Bitmap? {
-        val rect = ClickAreaModel.clickArea.outlineRect()
+    private fun cropDoodleRectBitmap(bitmap: Bitmap?, rect: Rect): Bitmap? {
         if (rect.left == -1 || bitmap == null) {
             return null
         }

@@ -20,7 +20,7 @@ object pHash {
      */
     //获取指纹，long刚好64位，方便存放
     @Throws(IOException::class)
-    fun dctImageHash(src: Bitmap?, recycle: Boolean): Long {
+    fun dctImageHash(src: Bitmap?, recycle: Boolean = false): Long {
         //由于计算dct需要图片长宽相等，所以统一取32
         val length = 32
 
@@ -232,9 +232,9 @@ object pHash {
 
 
     /**
-     * 暂定相同点小于40%为相似：64*0.4=26
+     * 暂定相同点小于10%为相似
      */
     fun isSimilar(distance: Int): Boolean {
-        return distance >= 0 && distance < (64 * 0.4f).toInt()
+        return distance >= 0 && distance < (64 * 0.1f).toInt()
     }
 }

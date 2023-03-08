@@ -79,7 +79,11 @@ class FloatWindowService : Service() {
 
         floatingView.findViewById<ImageView>(R.id.iv_screenshot).setOnClickListener {
             Log.w(TAG, "screenshot clicked!!")
-            MediaProjectionHelper.instance?.startScreenCapture()
+            if (MediaProjectionHelper.instance?.isTimerTicking == true) {
+                MediaProjectionHelper.instance?.stopTimer()
+            } else {
+                MediaProjectionHelper.instance?.startTimer(1678)
+            }
         }
 
         floatingView.isClickable = true
@@ -128,10 +132,14 @@ class FloatWindowService : Service() {
     }
 
     override fun onDestroy() {
-        stopForeground(true)
+        stopForeground(STOP_FOREGROUND_REMOVE)
         windowManager.removeView(floatingView)
 
         rotationWatcher.removeRotationWatcher()
+
+        if (MediaProjectionHelper.instance?.isTimerTicking == true) {
+            MediaProjectionHelper.instance?.stopTimer()
+        }
         super.onDestroy()
     }
 

@@ -19,13 +19,19 @@ import android.os.Looper
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.UiThread
+import androidx.annotation.WorkerThread
 import com.rfw.clickhelper.service.FloatWindowService
 import com.rfw.clickhelper.tools.DisplayUtils
 import com.rfw.clickhelper.tools.Extensions.TAG
+import com.rfw.clickhelper.tools.Extensions.launchPeriodicAsync
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import java.lang.ref.WeakReference
+import java.util.*
 
-typealias ImageAvailableCallback = (Bitmap?) -> Unit
+typealias ImageReadyCallback = (Bitmap?) -> Unit
 
 /**
  * https://github.com/android/media-samples/blob/6b205c3db94a7f4a0f73fe27fc6139125c24e9b8/ScreenCapture/Application/src/main/java/com/example/android/screencapture/ScreenCaptureFragment.java
@@ -34,7 +40,7 @@ typealias ImageAvailableCallback = (Bitmap?) -> Unit
 class MediaProjectionHelper private constructor(
     activity: ComponentActivity,
 //    activityResultCallback: ActivityResultCallback<ActivityResult>,
-    @UiThread callback: ImageAvailableCallback
+    @WorkerThread callback: ImageReadyCallback? = null
 ) {
     private var screenCaptureResultCode = 0
     private var screenCaptureResultData: Intent? = null
@@ -51,10 +57,19 @@ class MediaProjectionHelper private constructor(
     private var weakActivity = WeakReference(activity)
 
     var isLandscape = false
+
+    @Volatile
     var isCapturing = false
 
+    @Volatile
+    var isTimerTicking = false
+
+    var timer = Timer("media_projection")
+
+    var timerJob: Job? = null
+
     private var imageReader: ImageReader? = null
-    private var imageAvailableCallback: ImageAvailableCallback = callback
+    private var imageReadyCallback: ImageReadyCallback? = callback
 
     private val requestMediaProjectionLauncher =
         activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -115,25 +130,25 @@ class MediaProjectionHelper private constructor(
     }
 
     private fun initImagerReader(width: Int, height: Int) {
-        imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1).apply {
+        imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2).apply {
             this.setOnImageAvailableListener({ reader ->
-                if (!reader.equals(imageReader)) {
-                    Log.w(TAG, "imageReader reconstructed!")
-                    reader.close()
-                    return@setOnImageAvailableListener
-                }
-
-                val image = reader.acquireLatestImage()
-                if (image != null) {
-                    val bitmap = image2Bitmap(image)
-                    Log.w(TAG, "bitmap: ${bitmap?.width} x ${bitmap?.height}")
-                    image.close()
-                    imageAvailableCallback(bitmap)
-                } else {
-                    Log.d(TAG, "image == null")
-                }
-
-                stopScreenCapture()
+//                if (!reader.equals(imageReader)) {
+//                    Log.w(TAG, "imageReader reconstructed!")
+//                    reader.close()
+//                    return@setOnImageAvailableListener
+//                }
+//
+//                val image = reader.acquireLatestImage()
+//                if (image != null) {
+//                    val bitmap = image2Bitmap(image)
+//                    Log.w(TAG, "bitmap: ${bitmap?.width} x ${bitmap?.height}")
+//                    image.close()
+//                    imageAvailableCallback(bitmap)
+//                } else {
+//                    Log.d(TAG, "image == null")
+//                }
+//
+//                stopScreenCapture()
             }, Handler(Looper.getMainLooper()))
             // todo: imageReader.surface.setFrameRate?
 //        this.surface.setFrameRate()
@@ -166,6 +181,9 @@ class MediaProjectionHelper private constructor(
     }
 
     fun stopScreenCapture() {
+        if (!isCapturing)
+            return
+
         virtualDisplay?.release()
         virtualDisplay = null
 
@@ -192,6 +210,7 @@ class MediaProjectionHelper private constructor(
     }
 
     fun destroy() {
+        stopTimer()
         stopScreenCapture()
         tearDownMediaProjection()
     }
@@ -211,6 +230,77 @@ class MediaProjectionHelper private constructor(
         }
     }
 
+    fun setImageReadyCallback(callback: ImageReadyCallback?) {
+        imageReadyCallback = callback
+    }
+
+    fun startTimer(period: Long) {
+        if (isTimerTicking) return
+
+        isTimerTicking = true
+
+        timerJob = CoroutineScope(Dispatchers.IO).launchPeriodicAsync(period) {
+            Log.w(TAG, "timer tick")
+            startScreenCapture()
+
+            var image: Image? = null
+            while (true) {
+                image = imageReader?.acquireLatestImage()
+                if (image != null) {
+                    val bitmap = image2Bitmap(image)
+                    imageReadyCallback?.invoke(bitmap)
+                    image.close()
+                    break
+                } else {
+                    Log.d(TAG, "image == null, sleep 100ms")
+                    delay(100)
+                    if (!isTimerTicking) {
+                        break
+                    }
+                }
+            }
+
+            stopScreenCapture()
+        }
+
+//        timer.schedule(object : TimerTask() {
+//            override fun run() {
+//                Log.w(TAG, "timer tick")
+//                startScreenCapture()
+//
+//                var image: Image? = null
+//                while (true) {
+//                    image = imageReader?.acquireLatestImage()
+//                    if (image != null) {
+//                        val bitmap = image2Bitmap(image)
+//                        imageReadyCallback?.invoke(bitmap)
+//                        image.close()
+//                        break
+//                    } else {
+//                        Log.d(TAG, "image == null, sleep 100ms")
+//                        Thread.sleep(100)
+//                    }
+//                }
+//
+//                stopScreenCapture()
+//            }
+//        }, 0, period)
+    }
+
+    fun stopTimer() {
+        Log.w(TAG, "stopTimer: isTimerTicking=$isTimerTicking")
+        if (!isTimerTicking) return
+        if (isCapturing)
+            stopScreenCapture()
+
+        timerJob?.cancel()
+        timerJob = null
+
+//        timer.cancel()
+//        timer.purge()
+        isTimerTicking = false
+    }
+
     companion object {
         private const val SCREEN_CAPTURE_STATE_RESULT_CODE = "screen_capture_result_code"
         private const val SCREEN_CAPTURE_STATE_RESULT_DATA = "screen_capture_result_data"
@@ -221,7 +311,7 @@ class MediaProjectionHelper private constructor(
         // 单例参考：https://juejin.cn/post/6844903590545326088
         fun initInstance(
             activity: ComponentActivity,
-            @UiThread callback: ImageAvailableCallback
+            @WorkerThread callback: ImageReadyCallback? = null
         ): MediaProjectionHelper {
             return instance ?: synchronized(this) {
                 instance ?: MediaProjectionHelper(activity, callback).also { instance = it }
@@ -256,12 +346,12 @@ class MediaProjectionHelper private constructor(
                 )
             tmpBitmap.copyPixelsFromBuffer(buffer)
 
+            val lastBitmap = Bitmap.createBitmap(tmpBitmap, 0, 0, width, height) //过滤掉每行像素中的无效数据
+
             Log.w(
                 TAG,
-                "image2Bitmap: ${image.width} x ${image.height} -> ${tmpBitmap.width} x ${tmpBitmap.height}"
+                "image2Bitmap: ${image.width} x ${image.height} -> ${tmpBitmap.width} x ${tmpBitmap.height} -> ${lastBitmap.width} x ${lastBitmap.height}"
             )
-
-            val lastBitmap = Bitmap.createBitmap(tmpBitmap, 0, 0, width, height) //过滤掉每行像素中的无效数据
 
             tmpBitmap.recycle()
             return lastBitmap

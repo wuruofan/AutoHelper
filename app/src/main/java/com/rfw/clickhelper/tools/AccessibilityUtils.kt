@@ -73,25 +73,41 @@ object AccessibilityUtils {
     }
 
     /**
-     * 点击指定坐标
+     * 点击指定坐标，点击时长在50ms到200ms之间随机
+     *
      * 参考：https://juejin.cn/post/7111372688392159268/
+     * https://codelabs.developers.google.com/codelabs/developing-android-a11y-service#7
      */
     fun AccessibilityService.click(x: Float, y: Float) {
         Log.d(TAG, "click: ($x, $y)")
-        val builder = GestureDescription.Builder()
-        val path = Path()
-        path.moveTo(x, y)
-        path.lineTo(x, y)
-        builder.addStroke(GestureDescription.StrokeDescription(path, 0, 1))
-        val gesture = builder.build()
-        this.dispatchGesture(gesture, object : AccessibilityService.GestureResultCallback() {
-            override fun onCancelled(gestureDescription: GestureDescription) {
-                super.onCancelled(gestureDescription)
-            }
 
-            override fun onCompleted(gestureDescription: GestureDescription) {
-                super.onCompleted(gestureDescription)
-            }
-        }, null)
+        val path = Path().apply {
+            moveTo(x, y)
+//            lineTo(x, y)
+        }
+
+        val builder = GestureDescription.Builder()
+        builder.addStroke(
+            GestureDescription.StrokeDescription(
+                path,
+                0,
+                (50..200).random().toLong()
+            )
+        )
+        this.dispatchGesture(
+            builder.build(),
+            object : AccessibilityService.GestureResultCallback() {
+                override fun onCancelled(gestureDescription: GestureDescription) {
+                    super.onCancelled(gestureDescription)
+                    Log.w(TAG, "click onCancelled!")
+                }
+
+                override fun onCompleted(gestureDescription: GestureDescription) {
+                    super.onCompleted(gestureDescription)
+                    Log.w(TAG, "click onCompleted!")
+                }
+            },
+            null
+        )
     }
 }

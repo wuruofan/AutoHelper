@@ -9,3 +9,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "AutoHelper"
 include ':app'
+include ':autojob'

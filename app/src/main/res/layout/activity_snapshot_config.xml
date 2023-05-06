@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:id="@+id/root_layout">
 
-    <com.rfw.clickhelper.view.DoodleImageView
+    <net.taikula.autohelper.view.DoodleImageView
         android:id="@+id/graffti_image_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

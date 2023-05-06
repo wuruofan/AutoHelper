@@ -14,8 +14,6 @@ import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -24,7 +22,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter.base.listener.OnItemDragListener
 import com.chad.library.adapter.base.listener.OnItemSwipeListener
 import com.chad.library.adapter.base.viewholder.BaseViewHolder
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -36,6 +33,7 @@ import net.taikula.autohelper.data.model.ClickArea
 import net.taikula.autohelper.data.model.ClickAreaModel
 import net.taikula.autohelper.data.model.ClickTask
 import net.taikula.autohelper.data.viewmodel.ClickViewModel
+import net.taikula.autohelper.databinding.ActivityMainBinding
 import net.taikula.autohelper.helper.ImageReadyCallback
 import net.taikula.autohelper.helper.MediaProjectionHelper
 import net.taikula.autohelper.service.ClickAccessibilityService
@@ -48,7 +46,7 @@ import net.taikula.autohelper.tools.PhotoContracts
 
 
 @SuppressLint("WrongConstant")
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseCompatActivity<ActivityMainBinding>() {
 
     private lateinit var mediaProjectionHelper: MediaProjectionHelper
 
@@ -118,9 +116,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onCreateViewBinding(layoutInflater: LayoutInflater): ActivityMainBinding {
+        return ActivityMainBinding.inflate(layoutInflater)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
         mediaProjectionHelper = MediaProjectionHelper.initInstance(this)
         mediaProjectionHelper.onRestoreInstanceState(savedInstanceState)
@@ -204,10 +205,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val recyclerView = findViewById<RecyclerView>(R.id.recycler_view)
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        var clickConfigAdapter = ClickConfigAdapter()
-        recyclerView.adapter = clickConfigAdapter
+
+        val clickConfigAdapter = ClickConfigAdapter()
+        binding.recyclerView.layoutManager = LinearLayoutManager(this)
+        binding.recyclerView.adapter = clickConfigAdapter
 
         clickConfigAdapter.draggableModule.isSwipeEnabled = true
         clickConfigAdapter.draggableModule.isDragEnabled = true
@@ -221,9 +222,8 @@ class MainActivity : AppCompatActivity() {
             currentClickTask = ClickTask(allData)
         })
 
-        val layout = findViewById<CoordinatorLayout>(R.id.root_layout)
 
-        findViewById<FloatingActionButton>(R.id.fab_run).setOnClickListener {
+        binding.fabRun.setOnClickListener {
             if (AccessibilityUtils.isPermissionGranted(
                     ClickAccessibilityService::class.java.name,
                     this
@@ -237,12 +237,12 @@ class MainActivity : AppCompatActivity() {
                         mediaProjectionHelper.requestPermission()
                     }
                 } else {
-                    Snackbar.make(layout, "尚未开启悬浮窗权限", Snackbar.LENGTH_SHORT).setAction("去开启") {
+                    Snackbar.make(binding.root, "尚未开启悬浮窗权限", Snackbar.LENGTH_SHORT).setAction("去开启") {
                         FloatWindowUtils.requestPermission(this)
                     }.show()
                 }
             } else {
-                Snackbar.make(layout, "尚未开启辅助功能", Snackbar.LENGTH_SHORT).setAction("去开启") {
+                Snackbar.make(binding.root, "尚未开启辅助功能", Snackbar.LENGTH_SHORT).setAction("去开启") {
                     AccessibilityUtils.requestPermission(
                         this
                     )
@@ -289,16 +289,18 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-        findViewById<FloatingActionButton>(R.id.fab_add_config).setOnClickListener {
+        binding.fabAddConfig.setOnClickListener {
             selectPhoto.launch(null)
         }
 
-        findViewById<FloatingActionButton>(R.id.fab_help).setOnClickListener {
+        binding.fabHelp.setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             }
         }
 
     }
+
+
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.activity_main_menu, menu)

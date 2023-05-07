@@ -298,6 +298,10 @@ class MainActivity : BaseCompatActivity<ActivityMainBinding>() {
             }
         }
 
+        binding.autoJobBtn.setOnClickListener {
+            startActivity(Intent(this, net.taikula.autojob.MainActivity::class.java))
+        }
+
     }
 
 

@@ -57,6 +57,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics") // Compose Graphics
     implementation("androidx.compose.ui:ui-tooling-preview") // Compose UI Tooling Preview
     implementation("androidx.compose.material3:material3") // Material 3
+    implementation("androidx.work:work-runtime-ktx:2.8.1") // WorkManager kt version
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

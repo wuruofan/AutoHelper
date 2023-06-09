@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import com.google.android.material.color.DynamicColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import net.taikula.autohelper.data.ClickRepository
@@ -21,7 +22,9 @@ class MainApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        net.taikula.autohelper.MainApp.Companion.appContext = applicationContext
+        appContext = applicationContext
+
+        DynamicColors.applyToActivitiesIfAvailable(this)
 
         createNotificationChannel(this)
     }

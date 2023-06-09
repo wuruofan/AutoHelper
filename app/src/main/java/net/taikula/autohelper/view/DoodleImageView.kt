@@ -16,6 +16,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import net.taikula.autohelper.R
 import net.taikula.autohelper.data.model.ClickArea
+import net.taikula.autohelper.tools.ColorUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.tools.FileUtils
 import java.util.*
@@ -45,12 +46,12 @@ class DoodleImageView @JvmOverloads constructor(
     }
 
     private fun configPaint() {
-        painter.color = resources.getColor(R.color.light_pink, null)
+        painter.color = ColorUtils.getColor(this@DoodleImageView.context, R.attr.colorOnPrimary)
         painter.strokeWidth = 20F
 
         rectPainter.style = Paint.Style.STROKE
         rectPainter.strokeWidth = 5F
-        rectPainter.color = resources.getColor(R.color.snow_purple, null)
+        rectPainter.color = ColorUtils.getColor(this@DoodleImageView.context, R.attr.colorOnPrimary)
     }
 
     override fun onAttachedToWindow() {

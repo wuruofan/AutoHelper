@@ -14,7 +14,6 @@ import android.util.Log
 import android.view.*
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -40,6 +39,7 @@ import net.taikula.autohelper.service.ClickAccessibilityService
 import net.taikula.autohelper.service.FloatWindowService
 import net.taikula.autohelper.tools.AccessibilityUtils
 import net.taikula.autohelper.tools.AccessibilityUtils.click
+import net.taikula.autohelper.tools.ColorUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.tools.FloatWindowUtils
 import net.taikula.autohelper.tools.PhotoContracts
@@ -95,11 +95,11 @@ class MainActivity : BaseCompatActivity<ActivityMainBinding>() {
 
                     lastClickCheck = true
 
-                    Toast.makeText(
-                        net.taikula.autohelper.MainApp.appContext,
-                        "识别成功：${clickTask.currentClickArea.outlineRect()}, 点击：$point}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+//                    Toast.makeText(
+//                        net.taikula.autohelper.MainApp.appContext,
+//                        "识别成功：${clickTask.currentClickArea.outlineRect()}, 点击：$point}",
+//                        Toast.LENGTH_SHORT
+//                    ).show()
                 } else {
                     // 检查上一次点击事件是否成功
                     if (lastClickCheck) {
@@ -196,12 +196,7 @@ class MainActivity : BaseCompatActivity<ActivityMainBinding>() {
                 dY: Float,
                 isCurrentlyActive: Boolean
             ) {
-                canvas.drawColor(
-                    ContextCompat.getColor(
-                        this@MainActivity,
-                        R.color.color_light_blue
-                    )
-                )
+                canvas.drawColor(ColorUtils.getColor(this@MainActivity, R.attr.colorPrimary))
             }
         }
 

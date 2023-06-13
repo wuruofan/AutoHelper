@@ -15,7 +15,10 @@ abstract class BaseCompatActivity<VB : ViewBinding> : AppCompatActivity() {
         setContentView(binding.root)
     }
 
-    // e.g. net.taikula.autohelper.activity.MainActivity.onCreateViewBinding
+    /**
+     * 视图绑定
+     * @see MainActivity.onCreateViewBinding
+     */
     abstract fun onCreateViewBinding(layoutInflater: LayoutInflater): VB
 
 }

@@ -20,7 +20,7 @@ class MainActivity : BaseCompatActivity<ActivityMainBinding>() {
         super.onCreate(savedInstanceState)
 
         binding.autoJobBtn.setOnClickListener {
-            startActivity(Intent(this, MainActivity::class.java))
+            startActivity(Intent(this, net.taikula.autojob.MainActivity::class.java))
         }
 
         binding.btnClickHelper.setOnClickListener {

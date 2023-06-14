@@ -24,12 +24,12 @@ object Extensions {
             }
         }
 
-//    val gson
-//        get() = Gson()
-
     fun Any.log(msg: String) {
         Log.d("_" + this::class.java.simpleName, msg)
     }
+
+//    val gson
+//        get() = Gson()
 
 //    fun Any.toJson(): String {
 //        return gson.toJson(this)

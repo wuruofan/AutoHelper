@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.AttributeSet
 import android.util.Log
 import android.view.ViewGroup
+import androidx.core.content.withStyledAttributes
+import net.taikula.autohelper.R
 import net.taikula.autohelper.tools.Extensions.TAG
 
 
@@ -15,6 +17,26 @@ import net.taikula.autohelper.tools.Extensions.TAG
 class FlowLayout @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : ViewGroup(context, attrs, defStyleAttr) {
+
+    private var space: Float = 0f
+    private var spaceVertical: Float = 0f
+    private var spaceHorizontal: Float = 0f
+
+    init {
+        context.withStyledAttributes(attrs, R.styleable.FlowLayoutStyle) {
+            space = getDimension(R.styleable.FlowLayoutStyle_space, 0f)
+            spaceVertical = getDimension(R.styleable.FlowLayoutStyle_spaceVertical, 0f)
+            spaceHorizontal = getDimension(R.styleable.FlowLayoutStyle_spaceHorizontal, 0f)
+
+            if (space >= 0f) {
+                if (spaceHorizontal == 0f)
+                    spaceHorizontal = space
+
+                if (spaceVertical == 0f)
+                    spaceVertical = space
+            }
+        }
+    }
 
     //在onMeasure里，测量所有子View的宽高，以及确定ViewGroup自己的宽高。
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -63,23 +85,23 @@ class FlowLayout @JvmOverloads constructor(
             //如果当前的行宽度大于 父控件允许的最大宽度 则要换行
             //父控件允许的最大宽度 如果要适配 padding 这里要- getPaddingLeft() - getPaddingRight()
             //即为测量出的宽度减去父控件的左右边距
-            if (curLineWidth + childWidth > widthMeasure - paddingLeft - paddingRight) {
+            if (curLineWidth + childWidth + spaceHorizontal > widthMeasure - paddingLeft - paddingRight) {
                 //通过比较 当前行宽 和以前存储的最大行宽,得到最新的最大行宽,用于设置父控件的宽度
                 maxLineWidth = Math.max(maxLineWidth, curLineWidth)
                 //父控件的高度增加了，为当前高度+当前行的高度
                 totalHeight += curLineHeight
                 //换行后 刷新 当前行 宽高数据： 因为新的一行就这一个View，所以为当前这个view占用的宽高(要加上View 的 margin)
-                curLineWidth = childWidth
-                curLineHeight = childHeight
+                curLineWidth = childWidth + spaceHorizontal.toInt()
+                curLineHeight = childHeight + spaceVertical.toInt()
             } else {
                 //不换行：叠加当前行宽 和 比较当前行高:
-                curLineWidth += childWidth
-                curLineHeight = Math.max(curLineHeight, childHeight)
+                curLineWidth += childWidth + spaceHorizontal.toInt()
+                curLineHeight = Math.max(curLineHeight, childHeight + spaceVertical.toInt())
             }
 
             //如果已经是最后一个View,要比较当前行的 宽度和最大宽度，叠加一共的高度
             if (i == childCount - 1) {
-                maxLineWidth = Math.max(maxLineWidth, curLineWidth)
+                maxLineWidth = Math.max(maxLineWidth, curLineWidth + spaceVertical.toInt())
                 totalHeight += childHeight
             }
         }
@@ -143,7 +165,7 @@ class FlowLayout @JvmOverloads constructor(
                 //如果当前行已经放不下该子View了 需要换行放置：
                 //在新的一行布局子View，左x就是baseLeft，上y是 top +前一行高(这里假设的是每一行行高一样)，
                 lastLineHeight = curLineHeight
-                curLineHeight = childTotalHeight
+                curLineHeight = childTotalHeight + spaceVertical.toInt()
 
                 curTop += lastLineHeight
                 //layout时要考虑margin
@@ -153,7 +175,7 @@ class FlowLayout @JvmOverloads constructor(
                 viewB = viewT + child.measuredHeight
                 //child.layout(baseLeft + params.leftMargin, curTop + params.topMargin, baseLeft + params.leftMargin + child.getMeasuredWidth(), curTop + params.topMargin + child.getMeasuredHeight());
                 //Log.i(TAG,"新的一行:" +"   ,baseLeft:"+baseLeft +"  curTop:"+curTop+"  baseLeft+childWidth:"+(baseLeft+childWidth)+"  curTop+childHeight:"+ ( curTop+childHeight));
-                curLeft = baseLeft + childTotalWidth
+                curLeft = baseLeft + childTotalWidth + spaceHorizontal.toInt()
             } else {
                 //当前行可以放下子View:
                 viewL = curLeft + childLayoutParams.leftMargin
@@ -161,11 +183,11 @@ class FlowLayout @JvmOverloads constructor(
                 viewR = viewL + child.measuredWidth
                 viewB = viewT + child.measuredHeight
 
-                curLineHeight = Math.max(curLineHeight, childTotalHeight)
+                curLineHeight = Math.max(curLineHeight, childTotalHeight + spaceVertical.toInt())
 
                 //child.layout(curLeft + params.leftMargin, curTop + params.topMargin, curLeft + params.leftMargin + child.getMeasuredWidth(), curTop + params.topMargin + child.getMeasuredHeight());
                 //Log.i(TAG,"当前行:"+changed +"   ,curLeft:"+curLeft +"  curTop:"+curTop+"  curLeft+childWidth:"+(curLeft+childWidth)+"  curTop+childHeight:"+(curTop+childHeight));
-                curLeft += childTotalWidth
+                curLeft += childTotalWidth + spaceHorizontal.toInt()
             }
 
             // 布局子View

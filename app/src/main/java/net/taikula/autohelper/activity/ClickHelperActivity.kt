@@ -66,13 +66,21 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        supportActionBar?.setTitle(R.string.click_helper)
+        initToolbar()
 
         initMediaProjectionHelper(savedInstanceState)
 
         initRecyclerView()
 
         initClickListeners()
+    }
+
+    private fun initToolbar() {
+        supportActionBar?.apply {
+            setTitle(R.string.click_helper)
+            setDisplayHomeAsUpEnabled(true)
+            setHomeAsUpIndicator(R.drawable.ic_baseline_close_24)
+        }
     }
 
     private fun initClickListeners() {
@@ -318,6 +326,10 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                         TestActivity::class.java
                     )
                 )
+            }
+
+            android.R.id.home -> {
+                finish()
             }
         }
         return super.onOptionsItemSelected(item)

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_icons8_sharingan_100">
+    <target
+        android:name="sharingan_inner"
+        android:animation="@animator/rotation_change" />
+    <target
+        android:animation="@animator/color_change"
+        android:name="magatama_1" />
+    <target
+        android:animation="@animator/color_change"
+        android:name="magatama_2" />
+    <target
+        android:animation="@animator/color_change"
+        android:name="magatama_3" />
+</animated-vector>

@@ -6,6 +6,9 @@ import android.graphics.Paint
 import android.graphics.Rect
 
 
+/**
+ * 点击区域
+ */
 class ClickArea : java.io.Serializable {
     private val lineList: ArrayList<LineInfo> = ArrayList()
     var imagePath: String? = null

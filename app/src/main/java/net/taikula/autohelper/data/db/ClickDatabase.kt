@@ -5,11 +5,12 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import net.taikula.autohelper.data.db.dao.ClickDao
 import net.taikula.autohelper.data.db.entity.ClickData
+import net.taikula.autohelper.data.db.entity.ConfigData
 
 /**
  * https://developer.android.com/training/data-storage/room?hl=zh-cn#kotlin
  */
-@Database(entities = [ClickData::class], version = 1)
+@Database(entities = [ClickData::class, ConfigData::class], version = 1)
 abstract class ClickDatabase : RoomDatabase() {
     abstract fun clickDao(): ClickDao
 

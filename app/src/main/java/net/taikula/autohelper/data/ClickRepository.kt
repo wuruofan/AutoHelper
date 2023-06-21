@@ -6,19 +6,21 @@ import kotlinx.coroutines.flow.map
 import net.taikula.autohelper.algorithm.pHash
 import net.taikula.autohelper.data.db.dao.ClickDao
 import net.taikula.autohelper.data.db.entity.ClickData
+import net.taikula.autohelper.data.db.entity.ConfigData
 
 class ClickRepository(private val clickDao: ClickDao) {
-    var currentConfigId = 0
 
-    val allClickData: Flow<List<ClickData>> = clickDao.getAllByConfigId(currentConfigId).map {
-        it.forEach { data ->
-            data.clickArea.apply {
-                bitmap = BitmapFactory.decodeFile(imagePath)
-                phash = pHash.dctImageHash(bitmap)
+    fun getAllClickData(configId: Int = 0): Flow<List<ClickData>> {
+        return clickDao.getAllByConfigId(configId).map {
+            it.forEach { data ->
+                data.clickArea.apply {
+                    bitmap = BitmapFactory.decodeFile(imagePath)
+                    phash = pHash.dctImageHash(bitmap)
+                }
             }
-        }
 
-        it
+            it
+        }
     }
 
     suspend fun insert(data: ClickData) {
@@ -30,6 +32,23 @@ class ClickRepository(private val clickDao: ClickDao) {
     }
 
     suspend fun update(data: ClickData) {
+        clickDao.update(data)
+    }
+
+
+    fun getAllConfig(): Flow<List<ConfigData>> {
+        return clickDao.getAllConfig()
+    }
+
+    suspend fun insert(data: ConfigData) {
+        clickDao.insert(data)
+    }
+
+    suspend fun delete(data: ConfigData) {
+        clickDao.delete(data)
+    }
+
+    suspend fun update(data: ConfigData) {
         clickDao.update(data)
     }
 }

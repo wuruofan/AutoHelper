@@ -14,6 +14,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.AdapterView
+import android.widget.AdapterView.OnItemClickListener
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.Observer
@@ -31,6 +35,7 @@ import net.taikula.autohelper.MainApp
 import net.taikula.autohelper.R
 import net.taikula.autohelper.adapter.ClickConfigAdapter
 import net.taikula.autohelper.algorithm.pHash
+import net.taikula.autohelper.data.db.entity.ConfigData
 import net.taikula.autohelper.data.model.ClickArea
 import net.taikula.autohelper.data.model.ClickAreaModel
 import net.taikula.autohelper.data.model.ClickTask
@@ -45,6 +50,7 @@ import net.taikula.autohelper.tools.ColorUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.tools.FloatWindowUtils
 import net.taikula.autohelper.tools.PhotoContracts
+import net.taikula.autohelper.tools.ViewUtils.setSafeClickListener
 
 class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     private val mainScope = MainScope()
@@ -236,21 +242,61 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
         }
 
 
-        val clickConfigAdapter = ClickConfigAdapter()
+        val clickConfigAdapter = ClickConfigAdapter().apply {
+            draggableModule.run {
+                isSwipeEnabled = true
+                isDragEnabled = true
+                setOnItemDragListener(listener)
+                setOnItemSwipeListener(onItemSwipeListener)
+                itemTouchHelperCallback
+                    .setSwipeMoveFlags(ItemTouchHelper.START or ItemTouchHelper.END)
+            }
+        }
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = clickConfigAdapter
 
-        clickConfigAdapter.draggableModule.isSwipeEnabled = true
-        clickConfigAdapter.draggableModule.isDragEnabled = true
-        clickConfigAdapter.draggableModule.setOnItemDragListener(listener)
-        clickConfigAdapter.draggableModule.setOnItemSwipeListener(onItemSwipeListener)
-        clickConfigAdapter.draggableModule.itemTouchHelperCallback
-            .setSwipeMoveFlags(ItemTouchHelper.START or ItemTouchHelper.END)
 
-        clickViewModel.allData.observe(this, Observer { allData ->
+        clickViewModel.currentClickData.observe(this) { allData ->
+            if (allData == null)
+                return@observe
+
             clickConfigAdapter.setList(allData)
             currentClickTask = ClickTask(allData)
-        })
+        }
+
+        clickViewModel.allConfigData.observe(this) {
+            val list = it.map { config ->
+                Log.w(TAG, "configs: ${config.id} - ${config.name}")
+                config.name
+            }
+            binding.spinnerView.adapter = ArrayAdapter(this@ClickHelperActivity, android.R.layout.simple_spinner_item, list).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            }
+        }
+
+        binding.spinnerView.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?,
+                view: View?,
+                position: Int,
+                id: Long
+            ) {
+                Log.i(TAG, "click ${clickViewModel.allConfigData.value?.get(position)?.name}")
+                clickViewModel.allConfigData.value?.let {
+                    clickViewModel.currentConfigId = it[position].id
+                    clickViewModel.queryClickData(clickViewModel.currentConfigId)
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                TODO("Not yet implemented")
+            }
+
+        }
+
+        binding.newConfigImageView.setSafeClickListener {
+            clickViewModel.insert(ConfigData(0, "配置_${clickViewModel.allConfigData.value?.size}"))
+        }
     }
 
     private fun initMediaProjectionHelper(savedInstanceState: Bundle?) {

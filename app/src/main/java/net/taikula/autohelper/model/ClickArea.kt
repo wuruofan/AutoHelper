@@ -48,14 +48,14 @@ class ClickArea : java.io.Serializable {
     }
 
     fun outlineRect(): Rect {
-        var top = -1
-        var bottom = -1
-        var left = -1
-        var right = -1
+        var top = INVALID_VALUE
+        var bottom = INVALID_VALUE
+        var left = INVALID_VALUE
+        var right = INVALID_VALUE
 
         for (line in lineList) {
             val tmpRect = line.outlineRect()
-            if (top == -1) {
+            if (top == INVALID_VALUE) {
                 top = tmpRect.top
                 bottom = tmpRect.bottom
                 left = tmpRect.left
@@ -80,7 +80,7 @@ class ClickArea : java.io.Serializable {
             }
         }
 
-//        if (top == -1) {
+//        if (top == INVALID_VALUE) {
 //            return null
 //        }
 
@@ -137,13 +137,13 @@ class ClickArea : java.io.Serializable {
         }
 
         fun outlineRect(): Rect {
-            var top = -1F
-            var bottom = -1F
-            var left = -1F
-            var right = -1F
+            var top = INVALID_VALUE.toFloat()
+            var bottom = INVALID_VALUE.toFloat()
+            var left = INVALID_VALUE.toFloat()
+            var right = INVALID_VALUE.toFloat()
 
             for (point in pointList) {
-                if (top == -1F) {
+                if (top == INVALID_VALUE.toFloat()) {
                     top = point.y
                     bottom = point.y
                     left = point.x
@@ -173,4 +173,11 @@ class ClickArea : java.io.Serializable {
     }
 
     data class PointInfo(val x: Float, val y: Float) : java.io.Serializable
+
+    companion object {
+        const val INVALID_VALUE = -1
+
+
+    }
+
 }

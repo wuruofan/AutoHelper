@@ -2,10 +2,8 @@ package net.taikula.autohelper.activity
 
 import android.animation.ValueAnimator
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -42,6 +40,7 @@ import net.taikula.autohelper.service.ClickAccessibilityService
 import net.taikula.autohelper.service.FloatWindowService
 import net.taikula.autohelper.tools.AccessibilityUtils
 import net.taikula.autohelper.tools.AccessibilityUtils.click
+import net.taikula.autohelper.tools.BitmapUtils.cropRectBitmap
 import net.taikula.autohelper.tools.ColorUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.tools.FloatWindowUtils
@@ -61,6 +60,42 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     private var currentClickTask: ClickTask? = null
 
     private var lastClickCheck = false
+
+    // 启动截图涂抹 activity
+    private val doodleActivityLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (it.resultCode == RESULT_OK) {
+                val intent = it.data
+                val clickArea = intent?.getSerializableExtra("data") as? ClickArea
+                if (clickArea != null) {
+                    clickViewModel.insert(clickArea)
+                }
+            }
+        }
+
+    // 启动选择图片 activity
+    private val selectPhotoActivityLauncher =
+        registerForActivityResult(PhotoContracts.SelectPhotoContract()) { uri: Uri? ->
+            if (uri != null) {
+//                // 返回的选择的图片uri
+//                if (needCrop) {
+//                    // 需要剪裁图片，再调用剪裁图片的launch()方法
+//                    cropPhoto.launch(CropParams(uri))
+//                } else {
+//                    // 如果不剪裁图片，则直接显示
+//                    ivImage.setImageURI(uri)
+//                }
+                val intent = Intent(
+                    this, SnapshotDoodleActivity::class.java
+                )
+                intent.putExtra(
+                    SnapshotDoodleActivity.INTENT_KEY_IMAGE_URI, uri.toString()
+                )
+                doodleActivityLauncher.launch(intent)
+            } else {
+                Toast.makeText(this, "您没有选择任何图片", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     override fun onCreateViewBinding(layoutInflater: LayoutInflater): ActivityClickHelperBinding {
         return ActivityClickHelperBinding.inflate(layoutInflater)
@@ -88,74 +123,48 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 
     private fun initClickListeners() {
         binding.fabRun.setOnClickListener {
-            if (AccessibilityUtils.isPermissionGranted(
-                    ClickAccessibilityService::class.java.name,
-                    this
+            // 辅助功能权限
+            if (!AccessibilityUtils.isPermissionGranted(
+                    ClickAccessibilityService::class.java.name, this
                 )
             ) {
-                if (FloatWindowUtils.isPermissionGranted(this)) {
-                    if (mediaProjectionHelper.isPermissionGranted()) {
-                        startService(Intent(this, FloatWindowService::class.java))
-                        moveTaskToBack(true)
-                    } else {
-                        mediaProjectionHelper.requestPermission()
-                    }
-                } else {
-                    Snackbar.make(binding.root, "尚未开启悬浮窗权限", Snackbar.LENGTH_SHORT)
-                        .setAction("去开启") {
-                            FloatWindowUtils.requestPermission(this)
-                        }.show()
-                }
+                Snackbar.make(
+                    binding.root,
+                    resources.getString(R.string.accessibility_permission_not_granted),
+                    Snackbar.LENGTH_SHORT
+                ).setAction(resources.getString(R.string.go_to_grant_permission)) {
+                    AccessibilityUtils.requestPermission(
+                        this
+                    )
+                }.show()
+
+                return@setOnClickListener
+            }
+
+            // 悬浮窗权限
+            if (!FloatWindowUtils.isPermissionGranted(this)) {
+                Snackbar.make(
+                    binding.root,
+                    resources.getString(R.string.float_window_permission_not_granted),
+                    Snackbar.LENGTH_SHORT
+                ).setAction(resources.getString(R.string.go_to_grant_permission)) {
+                    FloatWindowUtils.requestPermission(this)
+                }.show()
+                return@setOnClickListener
+            }
+
+            // 屏幕录制权限
+            if (mediaProjectionHelper.isPermissionGranted()) {
+                startService(Intent(this, FloatWindowService::class.java))
+                moveTaskToBack(true)
             } else {
-                Snackbar.make(binding.root, "尚未开启辅助功能", Snackbar.LENGTH_SHORT)
-                    .setAction("去开启") {
-                        AccessibilityUtils.requestPermission(
-                            this
-                        )
-                    }.show()
+                mediaProjectionHelper.requestPermission()
             }
         }
 
-        val doodleActivityLaunch =
-            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-                if (it.resultCode == RESULT_OK) {
-                    val intent = it.data
-                    val clickArea = intent?.getSerializableExtra("data") as? ClickArea
-                    if (clickArea != null) {
-                        clickViewModel.insert(clickArea)
-                    }
-                }
-            }
-
-        // 选择图片
-        val selectPhoto =
-            registerForActivityResult(PhotoContracts.SelectPhotoContract()) { uri: Uri? ->
-                if (uri != null) {
-                    //                // 返回的选择的图片uri
-                    //                if (needCrop) {
-                    //                    // 需要剪裁图片，再调用剪裁图片的launch()方法
-                    //                    cropPhoto.launch(CropParams(uri))
-                    //                } else {
-                    //                    // 如果不剪裁图片，则直接显示
-                    //                    ivImage.setImageURI(uri)
-                    //                }
-                    val intent = Intent(
-                        this,
-                        SnapshotDoodleActivity::class.java
-                    )
-                    intent.putExtra(
-                        SnapshotDoodleActivity.INTENT_KEY_IMAGE_URI,
-                        uri.toString()
-                    )
-                    //                    startActivity(intent)
-                    doodleActivityLaunch.launch(intent)
-                } else {
-                    Toast.makeText(this, "您没有选择任何图片", Toast.LENGTH_SHORT).show()
-                }
-            }
 
         binding.fabAddConfig.setOnClickListener {
-            selectPhoto.launch(null)
+            selectPhotoActivityLauncher.launch(null)
         }
 
         binding.fabHelp.setOnClickListener {
@@ -183,14 +192,10 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
             }
 
             override fun onItemDragMoving(
-                source: RecyclerView.ViewHolder,
-                from: Int,
-                target: RecyclerView.ViewHolder,
-                to: Int
+                source: RecyclerView.ViewHolder, from: Int, target: RecyclerView.ViewHolder, to: Int
             ) {
                 Log.d(
-                    TAG,
-                    "move from: " + source.adapterPosition + " to: " + target.adapterPosition
+                    TAG, "move from: " + source.adapterPosition + " to: " + target.adapterPosition
                 )
             }
 
@@ -245,8 +250,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                 isDragEnabled = true
                 setOnItemDragListener(listener)
                 setOnItemSwipeListener(onItemSwipeListener)
-                itemTouchHelperCallback
-                    .setSwipeMoveFlags(ItemTouchHelper.START or ItemTouchHelper.END)
+                itemTouchHelperCallback.setSwipeMoveFlags(ItemTouchHelper.START or ItemTouchHelper.END)
             }
         }
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
@@ -254,8 +258,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 
 
         clickViewModel.currentClickData.observe(this) { allData ->
-            if (allData == null)
-                return@observe
+            if (allData == null) return@observe
 
             clickConfigAdapter.setList(allData)
             currentClickTask = ClickTask(allData)
@@ -266,17 +269,16 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                 Log.w(TAG, "configs: ${config.id} - ${config.name}")
                 config.name
             }
-            binding.spinnerView.adapter = ArrayAdapter(this@ClickHelperActivity, android.R.layout.simple_spinner_item, list).apply {
+            binding.spinnerView.adapter = ArrayAdapter(
+                this@ClickHelperActivity, android.R.layout.simple_spinner_item, list
+            ).apply {
                 setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             }
         }
 
         binding.spinnerView.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
+                parent: AdapterView<*>?, view: View?, position: Int, id: Long
             ) {
                 Log.i(TAG, "click ${clickViewModel.allConfigData.value?.get(position)?.name}")
                 clickViewModel.allConfigData.value?.let {
@@ -288,7 +290,6 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
                 TODO("Not yet implemented")
             }
-
         }
 
         binding.newConfigImageView.setSafeClickListener {
@@ -297,59 +298,69 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     }
 
     private fun initMediaProjectionHelper(savedInstanceState: Bundle?) {
-        mediaProjectionHelper = MediaProjectionHelper.initInstance(this)
-        mediaProjectionHelper.onRestoreInstanceState(savedInstanceState)
-        mediaProjectionHelper.setImageReadyCallback { bitmap ->
-            mainScope.launch {
-                val clickTask = currentClickTask ?: return@launch
+        mediaProjectionHelper = MediaProjectionHelper.initInstance(this).apply {
+            onRestoreInstanceState(savedInstanceState)
+            setImageReadyCallback { bitmap ->
+                mainScope.launch {
+                    val clickTask = currentClickTask ?: return@launch
 
-                Log.w(TAG, "next task: $clickTask, last click check: $lastClickCheck")
+                    Log.w(TAG, "next task: $clickTask, last click check: $lastClickCheck")
 
-                if (bitmap != null) {
-                    val doodleBitmap =
-                        cropDoodleRectBitmap(bitmap, clickTask.currentClickArea.outlineRect())
-                    val captureHash = pHash.dctImageHash(doodleBitmap, false)
-                    val targetHash = clickTask.currentDstPHash
+                    if (bitmap != null) {
+                        val doodleBitmap =
+                            bitmap.cropRectBitmap(clickTask.currentClickArea.outlineRect())
 
-                    Log.w(
-                        TAG,
-                        "bitmap: ${bitmap.width} x ${bitmap.height}, captureHash=$captureHash, targetHash=$targetHash"
-                    )
-
-                    bitmap.recycle()
-                    doodleBitmap?.recycle()
-
-                    val distance = pHash.hammingDistance(captureHash, targetHash)
-
-                    if (pHash.isSimilar(distance)) {
-                        Log.w(TAG, "hammingDistance=$distance, is similar, try to click it!")
-
-                        val point = clickTask.currentClickPoint
-                        Log.w(TAG, "get random click point: $point")
-
-//                    delay(100)
-                        ClickAccessibilityService.accessibilityService?.click(point.x, point.y)
-
-                        lastClickCheck = true
-
-//                    Toast.makeText(
-//                        net.taikula.autohelper.MainApp.appContext,
-//                        "识别成功：${clickTask.currentClickArea.outlineRect()}, 点击：$point}",
-//                        Toast.LENGTH_SHORT
-//                    ).show()
-                    } else {
-                        // 检查上一次点击事件是否成功
-                        if (lastClickCheck) {
-                            Log.i(TAG, "last click success, do next!")
-
-                            clickTask.runningCount++
-                            lastClickCheck = false
+                        if (doodleBitmap == null) {
+                            bitmap.recycle()
+                            return@launch
                         }
-                    }
-                } else {
-                    Log.d(TAG, "image == null")
-                }
 
+                        // 获取待识别图片 hash
+                        val captureHash = pHash.dctImageHash(doodleBitmap, false)
+                        // 目标图片 hash
+                        val targetHash = clickTask.currentDstPHash
+
+                        Log.w(
+                            TAG,
+                            "bitmap: ${bitmap.width} x ${bitmap.height}, captureHash=$captureHash, targetHash=$targetHash"
+                        )
+
+                        bitmap.recycle()
+                        doodleBitmap.recycle()
+
+                        // 计算汉明距离
+                        val distance = pHash.hammingDistance(captureHash, targetHash)
+                        // 比较是否相似
+                        if (pHash.isSimilar(distance)) {
+                            Log.w(TAG, "hammingDistance=$distance, is similar, try to click it!")
+
+                            // 获取随机点并点击
+                            val point = clickTask.currentClickPoint
+                            Log.w(TAG, "get random click point: $point")
+                            ClickAccessibilityService.accessibilityService?.click(point.x, point.y)
+
+                            lastClickCheck = true
+
+                            // 这里不要 toast，会遮挡屏幕截图，导致检查是否点击成功判断为成功！
+//                            Toast.makeText(
+//                                MainApp.appContext,
+//                                "识别成功：${clickTask.currentClickArea.outlineRect()}, 点击：$point}",
+//                                Toast.LENGTH_SHORT
+//                            ).show()
+                        } else {
+                            // 检查上一次点击事件是否成功
+                            // 和当前图片不一致则认为上次点击成功了，此时再执行 runningCount++
+                            if (lastClickCheck) {
+                                Log.i(TAG, "last click success, do next!")
+
+                                clickTask.runningCount++
+                                lastClickCheck = false
+                            }
+                        }
+                    } else {
+                        Log.d(TAG, "image == null")
+                    }
+                }
             }
         }
     }
@@ -393,27 +404,5 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
         mediaProjectionHelper.onSaveInstanceState(outState)
     }
 
-    private fun cropDoodleRectBitmap(bitmap: Bitmap?, rect: Rect): Bitmap? {
-        if (rect.left == -1 || bitmap == null) {
-            return null
-        }
-
-        val width = bitmap.width
-        val height = bitmap.height
-        val doodleWidth = rect.width()
-        val doodleHeight = rect.height()
-//        if (isLandscape && width < height) {
-////            width = height.also { height = width } // swap: https://stackoverflow.com/a/45377921/1097709
-//            val tmp = doodleWidth
-//            doodleWidth = doodleHeight
-//            doodleHeight = tmp
-//        }
-        Log.w(
-            TAG,
-            "cropBitmap: origin size = $width x $height, doodle size = $doodleWidth x $doodleHeight, rect: $rect"
-        )
-
-        return Bitmap.createBitmap(bitmap, rect.left, rect.top, doodleWidth, doodleHeight)
-    }
 
 }

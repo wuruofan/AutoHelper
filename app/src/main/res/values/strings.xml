@@ -3,4 +3,7 @@
     <string name="auto_job">Auto Job</string>
     <string name="click_helper">自动点击助手</string>
     <string name="permission_hint">开启该权限才能正常使用模拟点击功能</string>
+    <string name="go_to_grant_permission">"去开启"</string>
+    <string name="float_window_permission_not_granted">尚未开启悬浮窗权限</string>
+    <string name="accessibility_permission_not_granted">尚未开启悬浮窗权限</string>
 </resources>

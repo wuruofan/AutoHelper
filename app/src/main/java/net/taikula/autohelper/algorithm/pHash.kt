@@ -8,20 +8,21 @@ import java.io.IOException
 
 /**
  * 图片相似度比较 pHash 算法
+ *
+ * pHash算法流程
+ * 1.缩小图片，最佳大小为32*32
+ * 2.转化成灰度图
+ * 3.转化为DCT图
+ * 4.取dct图左上角8*8的范围
+ * 5.计算所有点的平均值
+ * 6.8*8的范围刚好64个点，计算出64位的图片指纹，如果小于平均值记为0，反之记为1，指纹顺序可以随机，但是每张图片的指纹的顺序应该保持一致
+ * 7.最后比较两张图片指纹的汉明距离，越小表示越相识
+ *
  */
 object pHash {
     /**
-     * pHash算法流程
-     * 1.缩小图片，最佳大小为32*32
-     * 2.转化成灰度图
-     * 3.转化为DCT图
-     * 4.取dct图左上角8*8的范围
-     * 5.计算所有点的平均值
-     * 6.8*8的范围刚好64个点，计算出64位的图片指纹，如果小于平均值记为0，反之记为1，指纹顺序可以随机，但是每张图片的指纹的顺序应该保持一致
-     * 7.最后比较两张图片指纹的汉明距离，越小表示越相识
-     *
+     * 获取图片 Hash 指纹，long刚好64位，方便存放
      */
-    //获取指纹，long刚好64位，方便存放
     @Throws(IOException::class)
     fun dctImageHash(src: Bitmap?, recycle: Boolean = false): Long {
         //由于计算dct需要图片长宽相等，所以统一取32
@@ -37,6 +38,9 @@ object pHash {
         return computeHash(DCT8(pixels, length))
     }
 
+    /**
+     * 创建灰度图片
+     */
     private fun createGrayImage(src: Bitmap, length: Int): IntArray {
         val pixels = IntArray(length * length)
         src.getPixels(pixels, 0, length, 0, 0, length, length)
@@ -48,7 +52,9 @@ object pHash {
         return pixels
     }
 
-    //缩放成宽高一样的图片
+    /**
+     * 缩放成宽高一样的图片
+     */
     @Throws(IOException::class)
     private fun scaleBitmap(src: Bitmap?, recycle: Boolean, length: Float): Bitmap {
         if (src == null) {
@@ -69,7 +75,9 @@ object pHash {
         return bitmap
     }
 
-    //计算hash值
+    /**
+     * 计算hash值
+     */
     private fun computeHash(pxs: DoubleArray): Long {
         var t = 0.0
         for (i in pxs) {
@@ -90,7 +98,6 @@ object pHash {
      * 计算公式Gray = R*0.299 + G*0.587 + B*0.114
      * 由于浮点数运算性能较低，转换成位移运算
      * 向右每位移一位，相当于除以2
-     *
      */
     private fun computeGray(pixel: Int): Int {
         val red: Int = Color.red(pixel)
@@ -99,7 +106,9 @@ object pHash {
         return red * 38 + green * 75 + blue * 15 shr 7
     }
 
-    //取dct图左上角8*8的区域
+    /**
+     * 取dct图左上角8*8的区域
+     */
     private fun DCT8(pix: IntArray, n: Int): DoubleArray {
         val iMatrix = DCT(pix, n)
         val px = DoubleArray(8 * 8)
@@ -131,8 +140,7 @@ object pHash {
         }
         val quotient = coefficient(n) //求系数矩阵
         val quotientT = transposingMatrix(quotient, n) //转置系数矩阵
-        val temp: Array<DoubleArray>
-        temp = matrixMultiply(quotient, iMatrix, n)
+        val temp: Array<DoubleArray> = matrixMultiply(quotient, iMatrix, n)
         iMatrix = matrixMultiply(temp, quotientT, n)
         return iMatrix
     }

@@ -6,8 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.taikula.autohelper.data.ClickRepository
@@ -16,6 +14,9 @@ import net.taikula.autohelper.data.db.entity.ConfigData
 import net.taikula.autohelper.data.model.ClickArea
 import net.taikula.autohelper.tools.FileUtils
 
+/**
+ * 点击助手的 ViewModel
+ */
 class ClickViewModel(private val repository: ClickRepository) : ViewModel() {
     var currentConfigId = 0
 

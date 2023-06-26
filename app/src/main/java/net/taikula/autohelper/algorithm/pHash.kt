@@ -6,6 +6,9 @@ import android.graphics.Matrix
 import java.io.IOException
 
 
+/**
+ * 图片相似度比较 pHash 算法
+ */
 object pHash {
     /**
      * pHash算法流程

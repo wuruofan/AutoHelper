@@ -6,6 +6,9 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import net.taikula.autohelper.tools.Extensions.TAG
 
+/**
+ * 点击 辅助服务
+ */
 class ClickAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {

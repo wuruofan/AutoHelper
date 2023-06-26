@@ -2,6 +2,7 @@ package net.taikula.autohelper.data.model
 
 import android.graphics.Bitmap
 
+@Deprecated("test only")
 object ClickAreaModel {
     val clickArea = ClickArea()
 

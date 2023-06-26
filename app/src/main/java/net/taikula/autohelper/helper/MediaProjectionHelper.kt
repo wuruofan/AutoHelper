@@ -34,7 +34,8 @@ import java.util.*
 typealias ImageReadyCallback = (Bitmap?) -> Unit
 
 /**
- * https://github.com/android/media-samples/blob/6b205c3db94a7f4a0f73fe27fc6139125c24e9b8/ScreenCapture/Application/src/main/java/com/example/android/screencapture/ScreenCaptureFragment.java
+ * 手机截屏/录屏功能
+ * [参考链接](https://github.com/android/media-samples/blob/6b205c3db94a7f4a0f73fe27fc6139125c24e9b8/ScreenCapture/Application/src/main/java/com/example/android/screencapture/ScreenCaptureFragment.java)
  */
 @SuppressLint("WrongConstant")
 class MediaProjectionHelper private constructor(

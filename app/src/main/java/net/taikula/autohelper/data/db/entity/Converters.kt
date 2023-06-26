@@ -10,9 +10,9 @@ import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 
 /**
- * 参考：https://www.jianshu.com/p/1d6e5cb0af36
+ * [使用 Room 引用复杂数据](https://developer.android.com/training/data-storage/room/referencing-data?hl=zh-cn)
  *
- * 使用 Room 引用复杂数据：https://developer.android.com/training/data-storage/room/referencing-data?hl=zh-cn
+ * [参考链接](https://www.jianshu.com/p/1d6e5cb0af36)
  */
 class Converters {
     @TypeConverter

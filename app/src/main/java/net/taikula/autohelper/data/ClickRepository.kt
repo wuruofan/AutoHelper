@@ -8,6 +8,9 @@ import net.taikula.autohelper.data.db.dao.ClickDao
 import net.taikula.autohelper.data.db.entity.ClickData
 import net.taikula.autohelper.data.db.entity.ConfigData
 
+/**
+ * 仓库类，用于操作 DAO
+ */
 class ClickRepository(private val clickDao: ClickDao) {
 
     fun getAllClickData(configId: Int = 0): Flow<List<ClickData>> {

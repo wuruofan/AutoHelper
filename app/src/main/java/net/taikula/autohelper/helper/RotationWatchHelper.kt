@@ -11,7 +11,8 @@ import java.lang.reflect.Method
 typealias RotationWatchCallback = (Int) -> Unit
 
 /**
- * https://blog.csdn.net/qq627578198/article/details/110521581
+ * 手机旋转角度监听，利用 aidl 连接系统服务
+ * [参考链接](https://blog.csdn.net/qq627578198/article/details/110521581)
  */
 class RotationWatchHelper(callback: RotationWatchCallback) {
     private val iWindowManagerService: Any? by lazy { reflectWindowManagerService() }

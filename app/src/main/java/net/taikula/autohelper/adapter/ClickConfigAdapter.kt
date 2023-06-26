@@ -9,6 +9,9 @@ import com.chad.library.adapter.base.viewholder.BaseViewHolder
 import net.taikula.autohelper.R
 import net.taikula.autohelper.data.db.entity.ClickData
 
+/**
+ * 点击助手配置相关 adapter
+ */
 class ClickConfigAdapter : BaseQuickAdapter<ClickData, BaseViewHolder>(R.layout.config_item_view),
     DraggableModule {
     override fun convert(holder: BaseViewHolder, item: ClickData) {

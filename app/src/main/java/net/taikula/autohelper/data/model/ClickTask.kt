@@ -2,6 +2,10 @@ package net.taikula.autohelper.data.model
 
 import net.taikula.autohelper.data.db.entity.ClickData
 
+
+/**
+ * 当前执行的点击任务
+ */
 class ClickTask(clickData: List<ClickData>) {
     var runningCount = 0
 

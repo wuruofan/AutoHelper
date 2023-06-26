@@ -23,6 +23,9 @@ import net.taikula.autohelper.tools.DisplayUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import kotlin.math.absoluteValue
 
+/**
+ * 悬浮窗服务
+ */
 class FloatWindowService : Service() {
     private lateinit var windowManager: WindowManager
     private lateinit var floatingView: View
@@ -101,6 +104,7 @@ class FloatWindowService : Service() {
 
                         return true
                     }
+
                     MotionEvent.ACTION_UP -> {
                         if (isMoving) {
                             isMoving = false
@@ -108,6 +112,7 @@ class FloatWindowService : Service() {
                             exit()
                         }
                     }
+
                     MotionEvent.ACTION_MOVE -> {
                         val newX = event.rawX.toInt()
                         val newY = event.rawY.toInt()

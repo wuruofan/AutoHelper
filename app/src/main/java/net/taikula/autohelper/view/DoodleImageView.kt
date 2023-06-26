@@ -15,7 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import net.taikula.autohelper.R
-import net.taikula.autohelper.data.model.ClickArea
+import net.taikula.autohelper.model.ClickArea
 import net.taikula.autohelper.tools.ColorUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.tools.FileUtils

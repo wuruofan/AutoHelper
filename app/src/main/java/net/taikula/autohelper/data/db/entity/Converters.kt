@@ -2,7 +2,7 @@ package net.taikula.autohelper.data.db.entity
 
 import android.util.Log
 import androidx.room.TypeConverter
-import net.taikula.autohelper.data.model.ClickArea
+import net.taikula.autohelper.model.ClickArea
 import net.taikula.autohelper.tools.Extensions.TAG
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream

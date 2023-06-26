@@ -16,11 +16,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.AdapterView
-import android.widget.AdapterView.OnItemClickListener
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,12 +34,11 @@ import net.taikula.autohelper.R
 import net.taikula.autohelper.adapter.ClickConfigAdapter
 import net.taikula.autohelper.algorithm.pHash
 import net.taikula.autohelper.data.db.entity.ConfigData
-import net.taikula.autohelper.data.model.ClickArea
-import net.taikula.autohelper.data.model.ClickAreaModel
-import net.taikula.autohelper.data.model.ClickTask
-import net.taikula.autohelper.data.viewmodel.ClickViewModel
 import net.taikula.autohelper.databinding.ActivityClickHelperBinding
 import net.taikula.autohelper.helper.MediaProjectionHelper
+import net.taikula.autohelper.model.ClickArea
+import net.taikula.autohelper.model.ClickAreaModel
+import net.taikula.autohelper.model.ClickTask
 import net.taikula.autohelper.service.ClickAccessibilityService
 import net.taikula.autohelper.service.FloatWindowService
 import net.taikula.autohelper.tools.AccessibilityUtils
@@ -51,6 +48,7 @@ import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.tools.FloatWindowUtils
 import net.taikula.autohelper.tools.PhotoContracts
 import net.taikula.autohelper.tools.ViewUtils.setSafeClickListener
+import net.taikula.autohelper.viewmodel.ClickViewModel
 
 class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     private val mainScope = MainScope()

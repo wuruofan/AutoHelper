@@ -1,4 +1,4 @@
-package net.taikula.autohelper.data.viewmodel
+package net.taikula.autohelper.viewmodel
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -11,7 +11,7 @@ import kotlinx.coroutines.withContext
 import net.taikula.autohelper.data.ClickRepository
 import net.taikula.autohelper.data.db.entity.ClickData
 import net.taikula.autohelper.data.db.entity.ConfigData
-import net.taikula.autohelper.data.model.ClickArea
+import net.taikula.autohelper.model.ClickArea
 import net.taikula.autohelper.tools.FileUtils
 
 /**

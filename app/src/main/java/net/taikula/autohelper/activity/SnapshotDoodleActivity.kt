@@ -12,7 +12,7 @@ import android.util.Log
 import android.view.KeyEvent
 import android.widget.Toast
 import net.taikula.autohelper.R
-import net.taikula.autohelper.data.model.ClickAreaModel
+import net.taikula.autohelper.model.ClickAreaModel
 import net.taikula.autohelper.tools.DisplayUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.view.DoodleImageView

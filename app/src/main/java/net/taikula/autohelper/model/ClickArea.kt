@@ -1,4 +1,4 @@
-package net.taikula.autohelper.data.model
+package net.taikula.autohelper.model
 
 import android.graphics.Bitmap
 import android.graphics.Canvas

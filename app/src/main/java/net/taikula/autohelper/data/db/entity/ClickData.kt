@@ -2,7 +2,7 @@ package net.taikula.autohelper.data.db.entity
 
 import androidx.room.*
 import net.taikula.autohelper.data.db.entity.ClickData.Companion.TABLE_NAME
-import net.taikula.autohelper.data.model.ClickArea
+import net.taikula.autohelper.model.ClickArea
 
 /**
  * 点击数据表，每一个 ClickData 对应着一张截图的点击区域

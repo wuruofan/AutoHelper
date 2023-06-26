@@ -20,8 +20,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import net.taikula.autohelper.R
 import net.taikula.autohelper.algorithm.pHash
-import net.taikula.autohelper.data.model.ClickAreaModel
 import net.taikula.autohelper.helper.MediaProjectionHelper
+import net.taikula.autohelper.model.ClickAreaModel
 import net.taikula.autohelper.service.ClickAccessibilityService
 import net.taikula.autohelper.service.FloatWindowService
 import net.taikula.autohelper.tools.AccessibilityUtils

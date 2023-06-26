@@ -49,11 +49,7 @@
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"
             android:windowSoftInputMode="stateHidden" />
-        <activity
-            android:name=".activity.TestActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:exported="false"
-            android:windowSoftInputMode="stateHidden" />
+
 
         <service
             android:name=".service.ClickAccessibilityService"

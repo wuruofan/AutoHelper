@@ -37,7 +37,6 @@ import net.taikula.autohelper.data.db.entity.ConfigData
 import net.taikula.autohelper.databinding.ActivityClickHelperBinding
 import net.taikula.autohelper.helper.MediaProjectionHelper
 import net.taikula.autohelper.model.ClickArea
-import net.taikula.autohelper.model.ClickAreaModel
 import net.taikula.autohelper.model.ClickTask
 import net.taikula.autohelper.service.ClickAccessibilityService
 import net.taikula.autohelper.service.FloatWindowService
@@ -364,12 +363,12 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menu_test -> {
-                startActivity(
-                    Intent(
-                        this,
-                        TestActivity::class.java
-                    )
-                )
+//                startActivity(
+//                    Intent(
+//                        this,
+//                        TestActivity::class.java
+//                    )
+//                )
             }
 
             android.R.id.home -> {
@@ -380,8 +379,6 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     }
 
     override fun onResume() {
-        Log.w(TAG, "onResume: ${ClickAreaModel.bitmap}")
-
         super.onResume()
     }
 

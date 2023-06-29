@@ -13,7 +13,7 @@ import net.taikula.autohelper.data.db.entity.ConfigData
  */
 class ClickRepository(private val clickDao: ClickDao) {
 
-    fun getAllClickData(configId: Int = 0): Flow<List<ClickData>> {
+    fun getAllClickData(configId: Int): Flow<List<ClickData>> {
         return clickDao.getAllByConfigId(configId).map {
             it.forEach { data ->
                 data.clickArea.apply {

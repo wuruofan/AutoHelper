@@ -61,6 +61,8 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 
     private var lastClickCheck = false
 
+    private lateinit var clickConfigAdapter: ClickConfigAdapter
+
     // 启动截图涂抹 activity
     private val doodleActivityLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -104,13 +106,17 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        initToolbar()
-
+        initViews()
         initMediaProjectionHelper(savedInstanceState)
+    }
 
-        initRecyclerView()
-
+    private fun initViews() {
+        initToolbar()
         initClickListeners()
+
+        // 初始化配置下拉菜单相关
+        initConfigSpinnerView()
+        initClickDataRecyclerView()
     }
 
     private fun initToolbar() {
@@ -173,7 +179,43 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
         }
     }
 
-    private fun initRecyclerView() {
+    private fun initConfigSpinnerView() {
+        // 下拉菜单
+        binding.spinnerView.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?, view: View?, position: Int, id: Long
+            ) {
+                Log.i(TAG, "click ${clickViewModel.allConfigData.value?.get(position)?.name}")
+                clickViewModel.allConfigData.value?.let {
+                    clickViewModel.updateCurrentConfigId(it[position].id)
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                TODO("Not yet implemented")
+            }
+        }
+
+        binding.newConfigImageView.setSafeClickListener {
+            clickViewModel.insert(ConfigData(0, "配置_${clickViewModel.allConfigData.value?.size}"))
+        }
+
+
+        clickViewModel.allConfigData.observe(this) {
+            val list = it.map { config ->
+                Log.w(TAG, "configs: ${config.id} - ${config.name}")
+                config.name
+            }
+
+            binding.spinnerView.adapter = ArrayAdapter(
+                this@ClickHelperActivity, android.R.layout.simple_spinner_item, list
+            ).apply {
+                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            }
+        }
+    }
+
+    private fun initClickDataRecyclerView() {
         // 拖拽监听
         val listener: OnItemDragListener = object : OnItemDragListener {
             override fun onItemDragStart(viewHolder: RecyclerView.ViewHolder, pos: Int) {
@@ -243,8 +285,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
             }
         }
 
-
-        val clickConfigAdapter = ClickConfigAdapter().apply {
+        clickConfigAdapter = ClickConfigAdapter().apply {
             draggableModule.run {
                 isSwipeEnabled = true
                 isDragEnabled = true
@@ -262,38 +303,6 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 
             clickConfigAdapter.setList(allData)
             currentClickTask = ClickTask(allData)
-        }
-
-        clickViewModel.allConfigData.observe(this) {
-            val list = it.map { config ->
-                Log.w(TAG, "configs: ${config.id} - ${config.name}")
-                config.name
-            }
-            binding.spinnerView.adapter = ArrayAdapter(
-                this@ClickHelperActivity, android.R.layout.simple_spinner_item, list
-            ).apply {
-                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            }
-        }
-
-        binding.spinnerView.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(
-                parent: AdapterView<*>?, view: View?, position: Int, id: Long
-            ) {
-                Log.i(TAG, "click ${clickViewModel.allConfigData.value?.get(position)?.name}")
-                clickViewModel.allConfigData.value?.let {
-                    clickViewModel.currentConfigId = it[position].id
-                    clickViewModel.queryClickData(clickViewModel.currentConfigId)
-                }
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                TODO("Not yet implemented")
-            }
-        }
-
-        binding.newConfigImageView.setSafeClickListener {
-            clickViewModel.insert(ConfigData(0, "配置_${clickViewModel.allConfigData.value?.size}"))
         }
     }
 

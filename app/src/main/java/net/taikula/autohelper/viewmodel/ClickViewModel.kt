@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,14 +19,15 @@ import net.taikula.autohelper.tools.FileUtils
  * 点击助手的 ViewModel
  */
 class ClickViewModel(private val repository: ClickRepository) : ViewModel() {
-    var currentConfigId = 0
+    private val currentConfigIdLiveData = MutableLiveData(1)
 
-    val allClickData: LiveData<List<ClickData>> = repository.getAllClickData(currentConfigId).asLiveData()
+    val currentClickData: LiveData<List<ClickData>> =
+        currentConfigIdLiveData.switchMap { configId ->
+            repository.getAllClickData(configId).asLiveData()
+        }
 
-    var currentClickData = MutableLiveData<List<ClickData>>()
-
-    fun queryClickData(configId: Int) {
-        currentClickData.value = repository.getAllClickData(configId).asLiveData().value
+    fun updateCurrentConfigId(newConfigId: Int) {
+        currentConfigIdLiveData.value = newConfigId
     }
 
     fun insert(data: ClickData) = viewModelScope.launch {
@@ -35,7 +37,7 @@ class ClickViewModel(private val repository: ClickRepository) : ViewModel() {
     fun insert(clickArea: ClickArea) {
         viewModelScope.launch {
             val clickData = ClickData(
-                0, 0, allClickData.value?.size ?: 0,
+                0, currentConfigIdLiveData.value!!, currentClickData.value?.size ?: 0,
                 clickArea, System.currentTimeMillis()
             )
             repository.insert(clickData)
@@ -52,7 +54,7 @@ class ClickViewModel(private val repository: ClickRepository) : ViewModel() {
 
     fun delete(id: Int) {
         viewModelScope.launch {
-            val clickData = allClickData.value?.get(id)
+            val clickData = currentClickData.value?.get(id)
             if (clickData != null) {
                 repository.delete(clickData)
 

@@ -59,7 +59,8 @@
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintLeft_toRightOf="@id/modConfigImageView"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@id/configTextView" />
+        app:layout_constraintTop_toTopOf="@id/configTextView"
+        app:tint="#E53935" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view"

@@ -15,23 +15,29 @@ interface ClickDao {
     fun getAllByConfigId(configId: Int): Flow<List<ClickData>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(vararg data: ClickData)
+    suspend fun insert(vararg data: ClickData): Array<Long>
 
     @Delete
-    suspend fun delete(vararg data: ClickData)
+    suspend fun delete(vararg data: ClickData): Int
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun update(vararg data: ClickData)
+    suspend fun update(vararg data: ClickData): Int
+
+    @Query("select * from ${ClickData.TABLE_NAME} where id = :id")
+    suspend fun queryClickData(id: Int): ClickData?
 
     @Query("select * from ${ConfigData.TABLE_NAME}")
     fun getAllConfig(): Flow<List<ConfigData>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(vararg data: ConfigData)
+    suspend fun insert(vararg data: ConfigData): Array<Long>
 
     @Delete
-    suspend fun delete(vararg data: ConfigData)
+    suspend fun delete(vararg data: ConfigData): Int
 
     @Update(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun update(vararg data: ConfigData)
+    suspend fun update(vararg data: ConfigData): Int
+
+    @Query("select * from ${ConfigData.TABLE_NAME} where id = :id")
+    suspend fun queryConfigData(id: Int): ConfigData?
 }

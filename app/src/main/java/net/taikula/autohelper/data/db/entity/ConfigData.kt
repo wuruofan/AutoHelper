@@ -9,9 +9,12 @@ import androidx.room.PrimaryKey
  */
 @Entity(tableName = ConfigData.TABLE_NAME)
 data class ConfigData(
-    @PrimaryKey(autoGenerate = true) val id: Int,
-    @ColumnInfo(name = "name") val name: String
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @ColumnInfo(name = "name") var name: String
 ) {
+    override fun toString(): String {
+        return "[${id}, ${name}]"
+    }
 
     companion object {
         const val TABLE_NAME = "config_data"

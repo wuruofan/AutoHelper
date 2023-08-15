@@ -4,6 +4,7 @@ import android.animation.ValueAnimator
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -29,7 +30,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import net.taikula.autohelper.MainApp
 import net.taikula.autohelper.R
-import net.taikula.autohelper.adapter.ClickConfigAdapter
+import net.taikula.autohelper.adapter.ClickDataAdapter
 import net.taikula.autohelper.algorithm.pHash
 import net.taikula.autohelper.data.db.entity.ConfigData
 import net.taikula.autohelper.databinding.ActivityClickHelperBinding
@@ -42,11 +43,16 @@ import net.taikula.autohelper.tools.AccessibilityUtils
 import net.taikula.autohelper.tools.AccessibilityUtils.click
 import net.taikula.autohelper.tools.BitmapUtils.cropRectBitmap
 import net.taikula.autohelper.tools.ColorUtils
+import net.taikula.autohelper.tools.DialogXUtils
+import net.taikula.autohelper.tools.DisplayUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.tools.FloatWindowUtils
 import net.taikula.autohelper.tools.PhotoContracts
+import net.taikula.autohelper.tools.ViewUtils.disable
+import net.taikula.autohelper.tools.ViewUtils.enable
 import net.taikula.autohelper.tools.ViewUtils.setSafeClickListener
 import net.taikula.autohelper.viewmodel.ClickViewModel
+import java.util.concurrent.ConcurrentHashMap
 
 class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     private val mainScope = MainScope()
@@ -59,11 +65,30 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 
     private var currentClickTask: ClickTask? = null
 
+    /**
+     * 检查上一次点击是否成功的标志位
+     */
     private var lastClickCheck = false
 
-    private lateinit var clickConfigAdapter: ClickConfigAdapter
+    /**
+     * 点击数据 recyclerview 的 adapter
+     */
+    private lateinit var clickDataAdapter: ClickDataAdapter
 
-    // 启动截图涂抹 activity
+    /**
+     * 配置数据 spinnerview 的 adapter
+     */
+    private var configAdapter: ArrayAdapter<String>? = null
+
+    /**
+     * 缓存配置数据和 spinnerview 索引的映射关系
+     */
+    private var spinnerViewIndexConfigDataMap: ConcurrentHashMap<Int, ConfigData> =
+        ConcurrentHashMap()
+
+    /**
+     * 截图涂抹 activity 启动器
+     */
     private val doodleActivityLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == RESULT_OK) {
@@ -75,7 +100,9 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
             }
         }
 
-    // 启动选择图片 activity
+    /**
+     * 选择图片 activity 启动器
+     */
     private val selectPhotoActivityLauncher =
         registerForActivityResult(PhotoContracts.SelectPhotoContract()) { uri: Uri? ->
             if (uri != null) {
@@ -112,10 +139,10 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 
     private fun initViews() {
         initToolbar()
-        initClickListeners()
+        initFabClickListeners()
 
         // 初始化配置下拉菜单相关
-        initConfigSpinnerView()
+        initClickConfigSelectorRelated()
         initClickDataRecyclerView()
     }
 
@@ -127,7 +154,11 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
         }
     }
 
-    private fun initClickListeners() {
+    /**
+     * 初始化悬浮按钮相关
+     */
+    private fun initFabClickListeners() {
+        // 运行按钮
         binding.fabRun.setOnClickListener {
             // 辅助功能权限
             if (!AccessibilityUtils.isPermissionGranted(
@@ -168,53 +199,159 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
             }
         }
 
-
+        // 添加截图按钮
         binding.fabAddConfig.setOnClickListener {
             selectPhotoActivityLauncher.launch(null)
         }
 
+        // 帮助按钮
         binding.fabHelp.setOnClickListener {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             }
         }
     }
 
-    private fun initConfigSpinnerView() {
+    /**
+     * 获取当前下拉菜单选中的 ConfigData 数据
+     */
+    private fun getClickConfigData(position: Int): ConfigData? {
+        return clickViewModel.allConfigData.value?.get(position)
+    }
+
+    /**
+     * 初始化下拉菜单相关代码
+     */
+    private fun initClickConfigSelectorRelated() {
+
         // 下拉菜单
         binding.spinnerView.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?, view: View?, position: Int, id: Long
             ) {
-                Log.i(TAG, "click ${clickViewModel.allConfigData.value?.get(position)?.name}")
+                Log.i(TAG, "click ${getClickConfigData(position)?.name}")
                 clickViewModel.allConfigData.value?.let {
                     clickViewModel.updateCurrentConfigId(it[position].id)
                 }
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
-                TODO("Not yet implemented")
+                binding.modConfigImageView.disable()
+                binding.delConfigImageView.disable()
+                binding.fabAddConfig.disable()
+                binding.fabRun.disable()
             }
         }
 
+        // 添加配置按钮
         binding.newConfigImageView.setSafeClickListener {
-            clickViewModel.insert(ConfigData(0, "配置_${clickViewModel.allConfigData.value?.size}"))
+            val index = clickViewModel.allConfigData.value?.size ?: 0
+            val name = "配置_${index}"
+            clickViewModel.insert(ConfigData(name = name)) { id ->
+                Log.i(TAG, "insert success $id")
+                clickViewModel.updateCurrentConfigId(id.toInt())
+                DialogXUtils.showPopTip(this, "$name 已添加")
+            }
         }
 
+        // 编辑配置按钮
+        binding.modConfigImageView.disable()
+        binding.modConfigImageView.setSafeClickListener {
+            DialogXUtils.showInputDialog(this,
+                "重命名",
+                getClickConfigData(binding.spinnerView.selectedItemPosition)?.name ?: "",
+                {
+                    if (it.length > 8) {
+                        DialogXUtils.showPopTip(this@ClickHelperActivity, "名字太长啦(>8)！")
+                        true
+                    } else {
+                        val configData =
+                            getClickConfigData(binding.spinnerView.selectedItemPosition)
+                        if (configData != null) {
+                            configData.name = it
+                            clickViewModel.update(configData) {
+                                Log.i(
+                                    TAG,
+                                    "update configData $configData " + if (it) "success" else "fail"
+                                )
+                            }
+                        }
 
+                        false
+                    }
+                })
+        }
+
+        // 删除配置按钮
+        binding.delConfigImageView.disable()
+        binding.delConfigImageView.setSafeClickListener {
+            val selectedIndex = binding.spinnerView.selectedItemPosition
+            val configName = this.configAdapter?.getItem(selectedIndex)
+            if (configName == null) {
+                Log.w(TAG, "delete config, select null !!!")
+                return@setSafeClickListener
+            }
+
+            DialogXUtils.showMessageDialog(this, "删除", "是否删除配置【${configName}】？", {
+                val configData = spinnerViewIndexConfigDataMap[selectedIndex]
+                val preConfigData = spinnerViewIndexConfigDataMap[selectedIndex - 1]
+                if (configData == null) {
+                    Log.w(TAG, "delete config, get data null !!!")
+                    return@showMessageDialog
+                }
+                clickViewModel.delete(configData) {
+                    Log.i(TAG, "delete config $configName " + if (it) "success" else "failed")
+                    if (it && preConfigData != null) {
+                        clickViewModel.updateCurrentConfigId(preConfigData.id)
+                    }
+                }
+            })
+        }
+
+        // 所有配置数据观察
         clickViewModel.allConfigData.observe(this) {
+            var index = 0
+            var selectedIndex = 0
+
+            spinnerViewIndexConfigDataMap.clear()
+
             val list = it.map { config ->
                 Log.w(TAG, "configs: ${config.id} - ${config.name}")
+
+                spinnerViewIndexConfigDataMap[index] = config
+
+                if (config.id == clickViewModel.currentConfigId) {
+                    selectedIndex = index
+                    Log.w(TAG, "selectedIndex=$selectedIndex, config ${config.name}")
+                }
+                index++
+
                 config.name
             }
 
-            binding.spinnerView.adapter = ArrayAdapter(
-                this@ClickHelperActivity, android.R.layout.simple_spinner_item, list
-            ).apply {
-                setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            binding.modConfigImageView.enable(list.isNotEmpty())
+            binding.delConfigImageView.enable(list.isNotEmpty())
+            binding.fabAddConfig.enable(list.isNotEmpty())
+
+            // 更新下拉菜单数据
+            if (configAdapter == null) {
+                configAdapter = ArrayAdapter(
+                    this@ClickHelperActivity, android.R.layout.simple_spinner_item, list
+                ).apply {
+                    setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                }
+                binding.spinnerView.adapter = configAdapter
+            } else {
+                configAdapter!!.clear()
+                configAdapter!!.addAll(list)
             }
+
+            binding.spinnerView.setSelection(selectedIndex)
         }
     }
 
+    /**
+     * 初始化点击数据的 recyclerview 展示相关
+     */
     private fun initClickDataRecyclerView() {
         // 拖拽监听
         val listener: OnItemDragListener = object : OnItemDragListener {
@@ -271,7 +408,12 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 
             override fun onItemSwiped(viewHolder: RecyclerView.ViewHolder, pos: Int) {
                 Log.d(TAG, "View Swiped: $pos")
-                clickViewModel.delete(pos)
+
+                // 此时 adapter 中的数据已经被移出了，没法从 adapter 中获取 clickData
+                val clickData = clickViewModel.currentClickData.value?.get(pos) ?: return
+                clickViewModel.delete(clickData) {
+                    Log.i(TAG, "delete clickData " + if (it) "success" else "fail")
+                }
             }
 
             override fun onItemSwipeMoving(
@@ -281,11 +423,21 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                 dY: Float,
                 isCurrentlyActive: Boolean
             ) {
+                Log.d(
+                    TAG,
+                    "swiping: dX=${dX}, dY=${dY}, canvas: w=${canvas.width}, h=${canvas.height}, vh: w=${viewHolder.itemView.width}, h=${viewHolder.itemView.height}"
+                )
                 canvas.drawColor(ColorUtils.getColor(this@ClickHelperActivity, R.attr.colorPrimary))
+
+                // todo
+                canvas.drawText("滑动删除", 50f, viewHolder.itemView.height / 2f, Paint().apply {
+                    color = Color.WHITE
+                    textSize = DisplayUtils.sp2px(this@ClickHelperActivity, 20f).toFloat()
+                })
             }
         }
 
-        clickConfigAdapter = ClickConfigAdapter().apply {
+        clickDataAdapter = ClickDataAdapter().apply {
             draggableModule.run {
                 isSwipeEnabled = true
                 isDragEnabled = true
@@ -295,13 +447,15 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
             }
         }
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        binding.recyclerView.adapter = clickConfigAdapter
+        binding.recyclerView.adapter = clickDataAdapter
 
 
         clickViewModel.currentClickData.observe(this) { allData ->
             if (allData == null) return@observe
 
-            clickConfigAdapter.setList(allData)
+            binding.fabRun.enable(allData.isNotEmpty())
+
+            clickDataAdapter.setList(allData)
             currentClickTask = ClickTask(allData)
         }
     }

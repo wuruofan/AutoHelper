@@ -17,4 +17,19 @@ object ViewUtils {
             }
         })
     }
+
+    /**
+     * 使能控件
+     */
+    fun View.enable(able: Boolean = true) {
+        this.isEnabled = able
+        this.alpha = if (able) 1.0f else 0.5f
+    }
+
+    /**
+     * 禁用控件
+     */
+    fun View.disable() {
+        this.enable(false)
+    }
 }

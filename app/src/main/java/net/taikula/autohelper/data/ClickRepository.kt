@@ -13,6 +13,9 @@ import net.taikula.autohelper.data.db.entity.ConfigData
  */
 class ClickRepository(private val clickDao: ClickDao) {
 
+    /**
+     * 根据配置的 Id 获取所有点击数据
+     */
     fun getAllClickData(configId: Int): Flow<List<ClickData>> {
         return clickDao.getAllByConfigId(configId).map {
             it.forEach { data ->
@@ -26,32 +29,87 @@ class ClickRepository(private val clickDao: ClickDao) {
         }
     }
 
-    suspend fun insert(data: ClickData) {
-        clickDao.insert(data)
+    /**
+     * 插入数据
+     * @return 新行 id
+     */
+    suspend fun insert(data: ClickData): Long {
+        return clickDao.insert(data)[0]
     }
 
-    suspend fun delete(data: ClickData) {
-        clickDao.delete(data)
+    /**
+     * 删除数据
+     * @return 成功删除的行数
+     */
+    suspend fun delete(data: ClickData): Int {
+        return clickDao.delete(data)
     }
 
-    suspend fun update(data: ClickData) {
-        clickDao.update(data)
+    /**
+     * 删除数据
+     * @return 成功删除的行数
+     */
+    suspend fun delete(id: Int): Int {
+        val data = clickDao.queryClickData(id) ?: return -1
+
+        return clickDao.delete(data)
     }
 
+    /**
+     * 更新数据
+     * @return 成功更新的行数
+     */
+    suspend fun update(data: ClickData): Int {
+        return clickDao.update(data)
+    }
 
+    /**
+     * 根据 id 查询 ClickData
+     */
+    suspend fun queryClickData(id: Int): ClickData? {
+        return clickDao.queryClickData(id)
+    }
+
+    /**
+     * 获取所有配置数据
+     */
     fun getAllConfig(): Flow<List<ConfigData>> {
         return clickDao.getAllConfig()
     }
 
-    suspend fun insert(data: ConfigData) {
-        clickDao.insert(data)
+    /**
+     * 插入数据
+     * @return 新行 id
+     */
+    suspend fun insert(data: ConfigData): Long {
+        return clickDao.insert(data)[0]
     }
 
-    suspend fun delete(data: ConfigData) {
-        clickDao.delete(data)
+    /**
+     * 删除数据
+     * @return 成功删除的行数
+     */
+    suspend fun delete(data: ConfigData): Int {
+        return clickDao.delete(data)
     }
 
-    suspend fun update(data: ConfigData) {
-        clickDao.update(data)
+    /**
+     * 更新数据
+     * @return 成功更新的行数
+     */
+    suspend fun update(data: ConfigData): Int {
+        return clickDao.update(data)
+    }
+
+    /**
+     * 根据 id 查询配置数据
+     */
+    suspend fun queryConfigData(id: Int): ConfigData? {
+        return try {
+            clickDao.queryConfigData(id)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }

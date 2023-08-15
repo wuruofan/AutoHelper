@@ -12,7 +12,7 @@ import net.taikula.autohelper.data.db.entity.ClickData
 /**
  * 点击助手配置相关 adapter
  */
-class ClickConfigAdapter : BaseQuickAdapter<ClickData, BaseViewHolder>(R.layout.config_item_view),
+class ClickDataAdapter : BaseQuickAdapter<ClickData, BaseViewHolder>(R.layout.config_item_view),
     DraggableModule {
     override fun convert(holder: BaseViewHolder, item: ClickData) {
         holder.setText(R.id.tv_item_index, item.index.toString())

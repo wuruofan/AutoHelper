@@ -1,54 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="80dp"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
-    android:paddingHorizontal="16dp"
-    android:layout_marginBottom="1dp">
+    android:paddingHorizontal="15dp"
+    android:paddingVertical="8dp">
 
     <TextView
         android:id="@+id/tv_item_index"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="1"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        android:textSize="14sp" />
 
     <ImageView
         android:id="@+id/iv_click_area"
-        android:layout_width="152dp"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_marginStart="12dp"
-        android:layout_marginVertical="8dp"
-        app:layout_constraintStart_toEndOf="@id/tv_item_index"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        android:layout_marginStart="10dp"
+        android:layout_weight="1" />
 
     <TextView
         android:id="@+id/tv_config_desc"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        app:layout_constraintHorizontal_weight="1"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="10dp"
+        android:layout_weight="1"
         android:gravity="center"
-        android:text="rect"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/iv_drag"
-        app:layout_constraintStart_toEndOf="@id/iv_click_area"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:text="rect" />
 
     <ImageView
         android:id="@+id/iv_drag"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/drag_icon"
-        android:visibility="visible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_gravity="center_vertical"
+        android:src="@drawable/ic_baseline_drag_indicator_24"
+        android:visibility="visible" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

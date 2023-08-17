@@ -18,6 +18,8 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -360,8 +362,9 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                 val holder = viewHolder as BaseViewHolder
 
                 // 开始时，item背景色变化，demo这里使用了一个动画渐变，使得自然
-                val startColor = Color.WHITE
-                val endColor = Color.rgb(245, 245, 245)
+                val startColor = Color.TRANSPARENT
+                val endColor =
+                    ColorUtils.getColor(this@ClickHelperActivity, R.attr.colorOnSecondary)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     val v = ValueAnimator.ofArgb(startColor, endColor)
                     v.addUpdateListener { animation -> holder.itemView.setBackgroundColor(animation.animatedValue as Int) }
@@ -382,8 +385,9 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                 Log.d(TAG, "drag end: $pos")
                 val holder = viewHolder as BaseViewHolder
                 // 结束时，item背景色变化，demo这里使用了一个动画渐变，使得自然
-                val startColor = Color.rgb(245, 245, 245)
-                val endColor = Color.WHITE
+                val startColor =
+                    ColorUtils.getColor(this@ClickHelperActivity, R.attr.colorOnSecondary)
+                val endColor = Color.TRANSPARENT
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     val v = ValueAnimator.ofArgb(startColor, endColor)
                     v.addUpdateListener { animation -> holder.itemView.setBackgroundColor(animation.animatedValue as Int) }
@@ -427,13 +431,48 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                     TAG,
                     "swiping: dX=${dX}, dY=${dY}, canvas: w=${canvas.width}, h=${canvas.height}, vh: w=${viewHolder.itemView.width}, h=${viewHolder.itemView.height}"
                 )
-                canvas.drawColor(ColorUtils.getColor(this@ClickHelperActivity, R.attr.colorPrimary))
 
-                // todo
-                canvas.drawText("滑动删除", 50f, viewHolder.itemView.height / 2f, Paint().apply {
-                    color = Color.WHITE
+                val drawable = ResourcesCompat.getDrawable(
+                    this@ClickHelperActivity.resources,
+                    R.drawable.ic_baseline_delete_sweep_24,
+                    this@ClickHelperActivity.theme
+                )
+                val paint = Paint().apply {
+                    color = getColor(R.color.warning_red)
                     textSize = DisplayUtils.sp2px(this@ClickHelperActivity, 20f).toFloat()
-                })
+                }
+
+                // 文字大小
+                val textHeight = -paint.ascent() - paint.descent()
+//                val spSize = DisplayUtils.sp2px(this@ClickHelperActivity, 20f) // 不能使用这种方式计算文字大小
+
+                canvas.drawColor(
+                    ColorUtils.getColor(
+                        this@ClickHelperActivity,
+                        R.attr.colorPrimaryContainer
+                    )
+                )
+
+                if (drawable != null) {
+                    canvas.drawBitmap(
+                        drawable.toBitmap(),
+                        50f,
+                        (viewHolder.itemView.height - drawable.intrinsicHeight) / 2f,
+                        paint
+                    )
+                }
+
+                val textX = if (drawable == null)
+                    50f
+                else
+                    50f + DisplayUtils.dip2px(this@ClickHelperActivity, 24f) + 20f
+
+                canvas.drawText(
+                    "滑动删除",
+                    textX,
+                    viewHolder.itemView.height / 2f + textHeight / 2f,
+                    paint
+                )
             }
         }
 
@@ -449,7 +488,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = clickDataAdapter
 
-
+        // 观察点击数据
         clickViewModel.currentClickData.observe(this) { allData ->
             if (allData == null) return@observe
 

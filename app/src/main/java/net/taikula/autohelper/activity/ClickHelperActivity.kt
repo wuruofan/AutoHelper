@@ -357,9 +357,11 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     private fun initClickDataRecyclerView() {
         // 拖拽监听
         val listener: OnItemDragListener = object : OnItemDragListener {
+            var start: Int = -1
             override fun onItemDragStart(viewHolder: RecyclerView.ViewHolder, pos: Int) {
                 Log.d(TAG, "drag start")
                 val holder = viewHolder as BaseViewHolder
+                start = pos
 
                 // 开始时，item背景色变化，demo这里使用了一个动画渐变，使得自然
                 val startColor = Color.TRANSPARENT
@@ -395,6 +397,26 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                     v.start()
                 }
 
+                if (pos == start) {
+                    DialogXUtils.showInputDialog(
+                        this@ClickHelperActivity,
+                        "重命名",
+                        clickDataAdapter.data[pos].name,
+                        {
+                            val data = clickDataAdapter.data[pos]
+                            data.name = it
+                            clickViewModel.update(data) {
+                                Log.i(TAG, "update data $data success!")
+                                DialogXUtils.showPopTip(this@ClickHelperActivity, "重命名成功")
+                            }
+                            false
+                        },
+                        {
+                            DialogXUtils.showPopTip(this@ClickHelperActivity, "重命名失败")
+                        })
+                }
+
+                start = -1
             }
         }
 
@@ -481,6 +503,17 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                 isSwipeEnabled = true
                 isDragEnabled = true
                 setOnItemDragListener(listener)
+//                setOnItemLongClickListener(object : OnItemLongClickListener {
+//                    override fun onItemLongClick(
+//                        adapter: BaseQuickAdapter<*, *>,
+//                        view: View,
+//                        position: Int
+//                    ): Boolean {
+//                        DialogXUtils.showPopTip(this@ClickHelperActivity, "long clicked!")
+//                        return false
+//                    }
+//
+//                })
                 setOnItemSwipeListener(onItemSwipeListener)
                 itemTouchHelperCallback.setSwipeMoveFlags(ItemTouchHelper.START or ItemTouchHelper.END)
             }

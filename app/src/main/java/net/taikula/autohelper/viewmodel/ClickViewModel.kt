@@ -66,7 +66,7 @@ class ClickViewModel(private val repository: ClickRepository) : ViewModel() {
         viewModelScope.launch {
             val clickData = ClickData(
                 0, currentConfigIdLiveData.value!!, currentClickData.value?.size ?: 0,
-                clickArea, System.currentTimeMillis()
+                clickArea, clickArea.toString()
             )
             val ret = repository.insert(clickData)
             if (ret > 0) {

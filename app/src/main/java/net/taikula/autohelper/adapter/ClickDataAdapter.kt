@@ -30,7 +30,7 @@ class ClickDataAdapter : BaseQuickAdapter<ClickData, BaseViewHolder>(R.layout.co
                 }
             }
 
-            holder.setText(R.id.tv_config_desc, outlineRect().toString())
+            holder.setText(R.id.tv_config_desc, item.name)
         }
     }
 }

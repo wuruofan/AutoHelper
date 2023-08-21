@@ -15,8 +15,11 @@ data class ClickData(
     @ColumnInfo("index") val index: Int, // 点击序列
     @ColumnInfo("click_area") val clickArea: ClickArea, // 序列化后点击区域数据
 //    @ColumnInfo("image_path") val imagePath: String, // 点击区域截图路径
-    @ColumnInfo("timestamp") val time: Long
+    @ColumnInfo("name") var name: String // 名称
 ) {
+    override fun toString(): String {
+        return "[$configId, $id, $name]"
+    }
 
     companion object {
         const val TABLE_NAME = "click_data"

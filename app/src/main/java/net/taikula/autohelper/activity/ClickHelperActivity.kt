@@ -55,6 +55,7 @@ import net.taikula.autohelper.tools.ViewUtils.enable
 import net.taikula.autohelper.tools.ViewUtils.setSafeClickListener
 import net.taikula.autohelper.viewmodel.ClickViewModel
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.abs
 
 class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     private val mainScope = MainScope()
@@ -459,22 +460,50 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                     R.drawable.ic_baseline_delete_sweep_24,
                     this@ClickHelperActivity.theme
                 )
+
                 val paint = Paint().apply {
                     color = getColor(R.color.warning_red)
                     textSize = DisplayUtils.sp2px(this@ClickHelperActivity, 20f).toFloat()
                 }
 
+                val drawText = "滑动删除"
+
                 // 文字大小
                 val textHeight = -paint.ascent() - paint.descent()
 //                val spSize = DisplayUtils.sp2px(this@ClickHelperActivity, 20f) // 不能使用这种方式计算文字大小
 
-                canvas.drawColor(
-                    ColorUtils.getColor(
-                        this@ClickHelperActivity,
-                        R.attr.colorPrimaryContainer
-                    )
-                )
+                // 文字宽度
+                val textWidth = paint.measureText(drawText)
 
+                // 文字左边距
+                val textX = if (drawable == null) 50f
+                else 50f + DisplayUtils.dip2px(this@ClickHelperActivity, 24f) + 20f
+
+                // 图标+文字+边距总宽度
+                val drawWidth = textX + textWidth + 50f
+                val itemWidth = viewHolder.itemView.width
+
+                // 绘制背景
+                // 根据滑动距离渐变颜色
+                val startColor = ColorUtils.getColor(
+                    this@ClickHelperActivity, R.attr.colorPrimaryContainer
+                )
+                val endColor =
+                    ColorUtils.getColor(this@ClickHelperActivity, R.attr.colorErrorContainer)
+                val distanceX = abs(dX)
+
+                if (distanceX > drawWidth) {
+                    val color = ColorUtils.argbEvaluate(distanceX / itemWidth, startColor, endColor)
+                    canvas.drawColor(color as Int)
+                } else {
+                    canvas.drawColor(
+                        ColorUtils.getColor(
+                            this@ClickHelperActivity, R.attr.colorPrimaryContainer
+                        )
+                    )
+                }
+
+                // 绘制图标
                 if (drawable != null) {
                     canvas.drawBitmap(
                         drawable.toBitmap(),
@@ -484,16 +513,9 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                     )
                 }
 
-                val textX = if (drawable == null)
-                    50f
-                else
-                    50f + DisplayUtils.dip2px(this@ClickHelperActivity, 24f) + 20f
-
+                // 绘制文字
                 canvas.drawText(
-                    "滑动删除",
-                    textX,
-                    viewHolder.itemView.height / 2f + textHeight / 2f,
-                    paint
+                    drawText, textX, viewHolder.itemView.height / 2f + textHeight / 2f, paint
                 )
             }
         }

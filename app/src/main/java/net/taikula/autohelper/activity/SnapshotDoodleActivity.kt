@@ -11,7 +11,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.widget.Toast
-import net.taikula.autohelper.R
+import net.taikula.autohelper.databinding.ActivitySnapshotConfigBinding
 import net.taikula.autohelper.tools.DisplayUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.view.DoodleImageView
@@ -21,6 +21,8 @@ class SnapshotDoodleActivity : Activity() {
         const val INTENT_KEY_IMAGE_URI = "image_uri"
     }
 
+    private lateinit var binding: ActivitySnapshotConfigBinding
+
     private lateinit var bitmap: Bitmap
     private lateinit var grafftiImageView: DoodleImageView
     private var lastBackTime = 0L
@@ -28,11 +30,12 @@ class SnapshotDoodleActivity : Activity() {
     @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_snapshot_config)
+        binding = ActivitySnapshotConfigBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         DisplayUtils.fullscreen(this)
 
-        grafftiImageView = findViewById(R.id.graffti_image_view)
+        grafftiImageView = binding.grafftiImageView
         intent.getStringExtra(INTENT_KEY_IMAGE_URI)?.let {
             bitmap = BitmapFactory.decodeStream(this.contentResolver.openInputStream(Uri.parse(it)))
 

@@ -1,7 +1,11 @@
 package net.taikula.autohelper.tools
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Point
 import android.graphics.Rect
+import android.net.Uri
 import android.util.Log
 import net.taikula.autohelper.tools.Extensions.TAG
 
@@ -51,4 +55,25 @@ object BitmapUtils {
     }
 
 
+    /**
+     * 获取图片宽高
+     */
+    fun getImageSize(context: Context, uri: Uri): Point? {
+        try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val options = BitmapFactory.Options()
+            options.inJustDecodeBounds = true
+            BitmapFactory.decodeStream(inputStream, null, options)
+            inputStream?.close()
+
+            return if (options.outWidth > 0 && options.outHeight > 0) {
+                Point().apply { set(options.outWidth, options.outHeight) }
+            } else {
+                null
+            }
+        } catch (ignore: Exception) {
+            ignore.printStackTrace()
+            return null
+        }
+    }
 }

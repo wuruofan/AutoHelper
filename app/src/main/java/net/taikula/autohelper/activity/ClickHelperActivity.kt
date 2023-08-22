@@ -43,11 +43,13 @@ import net.taikula.autohelper.service.ClickAccessibilityService
 import net.taikula.autohelper.service.FloatWindowService
 import net.taikula.autohelper.tools.AccessibilityUtils
 import net.taikula.autohelper.tools.AccessibilityUtils.click
+import net.taikula.autohelper.tools.BitmapUtils
 import net.taikula.autohelper.tools.BitmapUtils.cropRectBitmap
 import net.taikula.autohelper.tools.ColorUtils
 import net.taikula.autohelper.tools.DialogXUtils
 import net.taikula.autohelper.tools.DisplayUtils
 import net.taikula.autohelper.tools.Extensions.TAG
+import net.taikula.autohelper.tools.Extensions.invert
 import net.taikula.autohelper.tools.FloatWindowUtils
 import net.taikula.autohelper.tools.PhotoContracts
 import net.taikula.autohelper.tools.ViewUtils.disable
@@ -113,10 +115,17 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 //                if (needCrop) {
 //                    // 需要剪裁图片，再调用剪裁图片的launch()方法
 //                    cropPhoto.launch(CropParams(uri))
-//                } else {
-//                    // 如果不剪裁图片，则直接显示
-//                    ivImage.setImageURI(uri)
 //                }
+
+                // 判断当前选择的图片是不是截图
+                val screenPoint = DisplayUtils.getRealScreenSize(this@ClickHelperActivity)
+                val imagePoint = BitmapUtils.getImageSize(this@ClickHelperActivity, uri)
+
+                if (screenPoint != imagePoint && screenPoint != imagePoint?.invert()) {
+                    DialogXUtils.showPopTip(this@ClickHelperActivity, "这好像不是当前手机的截图哦！")
+                    return@registerForActivityResult
+                }
+
                 val intent = Intent(
                     this, SnapshotDoodleActivity::class.java
                 )
@@ -205,6 +214,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
         // 添加截图按钮
         binding.fabAddConfig.setOnClickListener {
             selectPhotoActivityLauncher.launch(null)
+            DialogXUtils.showPopTip(this@ClickHelperActivity, "请选择一张当前手机的屏幕截图！")
         }
 
         // 帮助按钮
@@ -490,8 +500,8 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                 )
                 val endColor =
                     ColorUtils.getColor(this@ClickHelperActivity, R.attr.colorErrorContainer)
-                val distanceX = abs(dX)
 
+                val distanceX = abs(dX)
                 if (distanceX > drawWidth) {
                     val color = ColorUtils.argbEvaluate(distanceX / itemWidth, startColor, endColor)
                     canvas.drawColor(color as Int)

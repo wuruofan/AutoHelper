@@ -1,5 +1,6 @@
 package net.taikula.autohelper.tools
 
+import android.graphics.Point
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -59,6 +60,16 @@ object Extensions {
             }
         } else {
             action()
+        }
+    }
+
+    /**
+     * Point x, y 坐标对调
+     */
+    fun Point.invert(): Point {
+        return Point().apply {
+            this.x = this@invert.y
+            this.y = this@invert.x
         }
     }
 }

@@ -101,7 +101,7 @@ class ClickArea : java.io.Serializable {
 
     override fun toString(): String {
         val rect = outlineRect()
-        return "区域: ${rect.left}, ${rect.top} - ${rect.right}, ${rect.bottom}"
+        return "区域: ${rect.left},${rect.top}-${rect.right},${rect.bottom}"
     }
 
     override fun hashCode(): Int {

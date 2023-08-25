@@ -43,8 +43,14 @@ object FileUtils {
         return file
     }
 
+    /**
+     * 删除文件
+     */
     fun delete(filePath: String): Boolean {
         val file = File(filePath)
-        return file.delete()
+        if (file.exists())
+            return file.delete()
+
+        return true
     }
 }

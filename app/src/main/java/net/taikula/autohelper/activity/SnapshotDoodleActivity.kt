@@ -137,6 +137,15 @@ class SnapshotDoodleActivity : Activity() {
     }
 
     /**
+     * 清除缓存并退出
+     */
+    private fun finishWithoutSave() {
+        grafftiImageView.removeDoodledImageCache()
+        setResult(RESULT_CANCELED, Intent())
+        finish()
+    }
+
+    /**
      * 初始化悬浮窗
      */
     private fun initFloatingInfoView() {
@@ -165,7 +174,7 @@ class SnapshotDoodleActivity : Activity() {
             val closeIv = findViewById<ImageView>(R.id.iv_close)
             Log.i(TAG, "closeIv tint mode: ${closeIv.imageTintMode?.name}")
 
-            setOnTouchListener(ItemViewTouchListener(layoutParams, windowManager))
+            setOnTouchListener(FloatingViewTouchListener(layoutParams, windowManager))
             windowManager.addView(this, layoutParams)
 
             okIv.setSafeClickListener {
@@ -173,7 +182,7 @@ class SnapshotDoodleActivity : Activity() {
             }
 
             closeIv.setSafeClickListener {
-                finish()
+                finishWithoutSave()
             }
         }
     }
@@ -186,13 +195,14 @@ class SnapshotDoodleActivity : Activity() {
         floatingView = null
     }
 
-    class ItemViewTouchListener(
+    class FloatingViewTouchListener(
         private val layoutParams: WindowManager.LayoutParams,
         private val windowManager: WindowManager
     ) :
         View.OnTouchListener {
         private var x = 0
         private var y = 0
+
         override fun onTouch(view: View, motionEvent: MotionEvent): Boolean {
             when (motionEvent.action) {
                 MotionEvent.ACTION_DOWN -> {

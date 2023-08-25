@@ -46,12 +46,12 @@ class DoodleImageView @JvmOverloads constructor(
     }
 
     private fun configPaint() {
-        painter.color = ColorUtils.getColor(this@DoodleImageView.context, R.attr.colorOnPrimary)
+        painter.color = ColorUtils.getColor(this@DoodleImageView.context, R.attr.colorPrimary)
         painter.strokeWidth = 20F
 
         rectPainter.style = Paint.Style.STROKE
         rectPainter.strokeWidth = 5F
-        rectPainter.color = ColorUtils.getColor(this@DoodleImageView.context, R.attr.colorOnPrimary)
+        rectPainter.color = ColorUtils.getColor(this@DoodleImageView.context, R.attr.colorSecondary)
     }
 
     override fun onAttachedToWindow() {

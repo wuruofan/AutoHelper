@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="250dp"
+    android:layout_height="80dp"
+    android:background="@drawable/shape_floating_info_bg">
+
+
+    <ImageView
+        android:id="@+id/iv_handle"
+        android:layout_width="130dp"
+        android:layout_height="8dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="2dp"
+        android:background="@drawable/shape_floating_info_handle_bg"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/iv_ok"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="15dp"
+        android:src="@drawable/ic_baseline_check_24"
+        app:layout_constraintBottom_toTopOf="@+id/iv_close"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        android:tint="@android:color/holo_green_light"
+        tools:ignore="UseAppTint" />
+
+    <!-- ⚠️此处使用 app:tint 不生效 -->
+    <ImageView
+        android:id="@+id/iv_close"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:src="@drawable/ic_baseline_close_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/iv_ok"
+        app:layout_constraintStart_toStartOf="@id/iv_ok"
+        app:layout_constraintTop_toBottomOf="@id/iv_ok"
+        app:layout_constraintVertical_chainStyle="packed"
+        android:tint="@color/warning_red"
+        tools:ignore="UseAppTint" />
+
+    <TextView
+        android:id="@+id/tv_info"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="15dp"
+        android:drawablePadding="5dp"
+        android:paddingEnd="5dp"
+        android:text="请涂抹需要点击的区域\n点击 ✓ 保存，点击 x 退出"
+        android:textColor="?attr/colorOnSurface"
+        android:drawableLeft="@drawable/ic_baseline_info_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/iv_ok"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_default="spread"
+        tools:ignore="RtlSymmetry" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

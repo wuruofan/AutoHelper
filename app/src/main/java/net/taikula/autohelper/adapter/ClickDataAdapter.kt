@@ -8,6 +8,7 @@ import com.chad.library.adapter.base.module.DraggableModule
 import com.chad.library.adapter.base.viewholder.BaseViewHolder
 import net.taikula.autohelper.R
 import net.taikula.autohelper.data.db.entity.ClickData
+import net.taikula.autohelper.tools.DisplayUtils
 
 /**
  * 点击助手配置相关 adapter
@@ -20,12 +21,30 @@ class ClickDataAdapter : BaseQuickAdapter<ClickData, BaseViewHolder>(R.layout.co
         item.clickArea.run {
             if (bitmap != null) {
                 Glide.with(holder.itemView).load(bitmap)
-                    .apply(RequestOptions.bitmapTransform(RoundedCorners(24)))
+                    .apply(
+                        RequestOptions.bitmapTransform(
+                            RoundedCorners(
+                                DisplayUtils.dip2px(
+                                    holder.itemView.context,
+                                    20f
+                                )
+                            )
+                        )
+                    )
                     .into(holder.getView(R.id.iv_click_area))
             } else {
                 imagePath?.let {
                     Glide.with(holder.itemView).load(it)
-                        .apply(RequestOptions.bitmapTransform(RoundedCorners(24)))
+                        .apply(
+                            RequestOptions.bitmapTransform(
+                                RoundedCorners(
+                                    DisplayUtils.dip2px(
+                                        holder.itemView.context,
+                                        20f
+                                    )
+                                )
+                            )
+                        )
                         .into(holder.getView(R.id.iv_click_area))
                 }
             }

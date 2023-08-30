@@ -39,7 +39,7 @@ typealias ImageReadyCallback = (Bitmap?) -> Unit
  */
 @SuppressLint("WrongConstant")
 class MediaProjectionHelper private constructor(
-    activity: ComponentActivity,
+    var activity: ComponentActivity,
 //    activityResultCallback: ActivityResultCallback<ActivityResult>,
     @WorkerThread callback: ImageReadyCallback? = null
 ) {
@@ -214,6 +214,8 @@ class MediaProjectionHelper private constructor(
         stopTimer()
         stopScreenCapture()
         tearDownMediaProjection()
+
+        activity.stopService(Intent(activity, FloatWindowService::class.java))
     }
 
     fun onSaveInstanceState(outState: Bundle) {

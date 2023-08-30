@@ -75,9 +75,9 @@
         android:id="@+id/fab_run"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
+        android:layout_margin="20dp"
         android:contentDescription=""
-        android:src="@drawable/ic_baseline_check_24"
+        android:src="@drawable/ic_baseline_play_arrow_24"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -85,24 +85,24 @@
         android:id="@+id/fab_add_config"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="92dp"
+        android:layout_marginBottom="15dp"
         android:contentDescription=""
         android:gravity="bottom|center_horizontal"
         android:src="@drawable/ic_baseline_add_24"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintLeft_toLeftOf="@id/fab_run"
+        app:layout_constraintRight_toRightOf="@id/fab_run"
+        app:layout_constraintBottom_toTopOf="@id/fab_run" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_help"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="160dp"
+        android:layout_marginBottom="15dp"
         android:contentDescription=""
         android:gravity="bottom|center_horizontal"
         android:src="@drawable/ic_baseline_lightbulb_24"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintLeft_toLeftOf="@id/fab_run"
+        app:layout_constraintRight_toRightOf="@id/fab_run"
+        app:layout_constraintBottom_toTopOf="@id/fab_add_config" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -153,7 +153,7 @@ class SnapshotDoodleActivity : Activity() {
             // ⚠️设置大小自适应，不生效
             width = DisplayUtils.dip2px(
                 this@SnapshotDoodleActivity,
-                240f
+                250f
             ) //WindowManager.LayoutParams.WRAP_CONTENT
             height = DisplayUtils.dip2px(
                 this@SnapshotDoodleActivity,
@@ -175,7 +175,6 @@ class SnapshotDoodleActivity : Activity() {
             Log.i(TAG, "closeIv tint mode: ${closeIv.imageTintMode?.name}")
 
             setOnTouchListener(FloatingViewTouchListener(layoutParams, windowManager))
-            windowManager.addView(this, layoutParams)
 
             okIv.setSafeClickListener {
                 finishWithResult()
@@ -185,6 +184,8 @@ class SnapshotDoodleActivity : Activity() {
                 finishWithoutSave()
             }
         }
+
+        windowManager.addView(floatingView, layoutParams)
     }
 
     /**

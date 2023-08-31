@@ -51,7 +51,12 @@ object BitmapUtils {
             "cropDoodleRectBitmap: origin size = $width x $height, doodle size = $doodleWidth x $doodleHeight, rect: $rect"
         )
 
-        return Bitmap.createBitmap(this, rect.left, rect.top, doodleWidth, doodleHeight)
+        // 避免竖屏的时候尝试截取横屏点击区域时，范围超出导致崩溃
+        return try {
+            Bitmap.createBitmap(this, rect.left, rect.top, doodleWidth, doodleHeight)
+        } catch (e: Exception) {
+            null
+        }
     }
 
 

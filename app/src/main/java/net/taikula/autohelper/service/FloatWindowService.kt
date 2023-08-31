@@ -1,5 +1,6 @@
 package net.taikula.autohelper.service
 
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.*
 import android.content.Intent
@@ -12,15 +13,17 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.view.*
-import android.widget.ImageView
-import androidx.annotation.Px
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.resource.gif.GifDrawable
+import android.view.animation.AccelerateDecelerateInterpolator
+import androidx.appcompat.content.res.AppCompatResources
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import net.taikula.autohelper.R
+import net.taikula.autohelper.databinding.FloatingWindowBinding
 import net.taikula.autohelper.helper.MediaProjectionHelper
 import net.taikula.autohelper.helper.RotationWatchHelper
 import net.taikula.autohelper.tools.DisplayUtils
 import net.taikula.autohelper.tools.Extensions.TAG
+import net.taikula.autohelper.tools.ViewUtils.setSafeClickListener
 import kotlin.math.absoluteValue
 
 /**
@@ -31,8 +34,16 @@ class FloatWindowService : Service() {
     private lateinit var floatingView: View
     private lateinit var floatingViewLayoutParams: WindowManager.LayoutParams
     private lateinit var screenSize: Point
+    private lateinit var _binding: FloatingWindowBinding
 
-    var isLandscape = false
+    private var isLandscape = false
+
+    /**
+     * 是否吸附边缘隐藏中
+     */
+    private var hiddenState = false
+
+    private var posState = State.NONE
 
     private val rotationWatcher = RotationWatchHelper {
         isLandscape = it == Surface.ROTATION_90 || it == Surface.ROTATION_270
@@ -60,18 +71,25 @@ class FloatWindowService : Service() {
 
         screenSize = DisplayUtils.getRealScreenSize(this)
 
-        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_window, null, false)
-        val imageView = floatingView.findViewById<ImageView>(R.id.iv_main)
-        Glide.with(this).asGif().load(R.drawable.mario_running).into(imageView)
-        (imageView.drawable as? GifDrawable)?.stop()
+        initFloatingView()
 
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        val dp50 = DisplayUtils.dip2px(this, 50f)
-        floatingViewLayoutParams = configWindowManagerParam(dp50, dp50).apply {
+        // 监听屏幕旋转事件
+        rotationWatcher.watchRotation()
+    }
+
+    /**
+     * 初始化悬浮窗相关
+     */
+    private fun initFloatingView() {
+        floatingView = LayoutInflater.from(this).inflate(R.layout.floating_window, null, false)
+        _binding = FloatingWindowBinding.bind(floatingView)
+
+        floatingViewLayoutParams = configWindowManagerParam().apply {
             gravity = Gravity.TOP or Gravity.START
             x = screenSize.x / 2
             y = screenSize.y / 2
         }
+        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         windowManager.addView(floatingView, floatingViewLayoutParams)
 
         Log.w(
@@ -79,37 +97,39 @@ class FloatWindowService : Service() {
             "windowManager: ${floatingView.layoutParams.width} x ${floatingView.layoutParams.height}, @(${floatingView.x}, ${floatingView.y})"
         )
 
-        floatingView.findViewById<ImageView>(R.id.iv_screenshot).setOnClickListener {
-            Log.w(TAG, "screenshot clicked!!")
-            if (MediaProjectionHelper.instance?.isTimerTicking == true) {
-                MediaProjectionHelper.instance?.stopTimer()
-            } else {
-                MediaProjectionHelper.instance?.startTimer(1678)
-            }
-        }
+        initViewClickListeners()
 
-        floatingView.isClickable = true
         floatingView.setOnTouchListener(object : View.OnTouchListener {
             private var x: Int = 0
             private var y: Int = 0
             private var isMoving = false
 
-            @SuppressLint("ClickableViewAccessibility")
             override fun onTouch(v: View?, event: MotionEvent?): Boolean {
                 when (event?.action) {
                     MotionEvent.ACTION_DOWN -> {
                         x = event.rawX.toInt()
                         y = event.rawY.toInt()
                         isMoving = false
-
-                        return true
                     }
 
                     MotionEvent.ACTION_UP -> {
+                        x = event.rawX.toInt()
+                        y = event.rawY.toInt()
+                        Log.i(TAG, "up=$x,$y")
+
                         if (isMoving) {
                             isMoving = false
+
+                            magnetizeToEdge()
                         } else {
-                            exit()
+                            // 点击事件
+                            if (hiddenState) {
+                                showCompleteViews(x < screenSize.x / 2)
+                            } else {
+                                hiddenOtherViews()
+                            }
+
+                            v?.performClick()
                         }
                     }
 
@@ -124,7 +144,14 @@ class FloatWindowService : Service() {
                             x = newX
                             y = newY
 
+                            if (!hiddenState) {
+                                hiddenOtherViews()
+                            }
+                            setStateAndBackground(State.NONE)
+
                             updateFloatingWindowPosition(deltaX, deltaY)
+
+                            Log.i(TAG, "moving=$x,$y")
                         }
                     }
                 }
@@ -132,7 +159,102 @@ class FloatWindowService : Service() {
             }
         })
 
-        rotationWatcher.watchRotation()
+        // 界面渲染完后吸附到屏幕边缘
+        MainScope().launch {
+            magnetizeToEdge()
+        }
+    }
+
+    /**
+     * 初始化点击事件
+     */
+    private fun initViewClickListeners() {
+        floatingView.isClickable = true
+
+        // 运行/停止按钮事件
+        val runStopListener: () -> Unit = {
+            Log.w(TAG, "screenshot clicked!!")
+            if (MediaProjectionHelper.instance?.isTimerTicking == true) {
+                MediaProjectionHelper.instance?.stopTimer()
+            } else {
+                MediaProjectionHelper.instance?.startTimer(1678)
+            }
+        }
+
+        _binding.ivLeftRunStop.setSafeClickListener(action = runStopListener)
+        _binding.ivRightRunStop.setSafeClickListener(action = runStopListener)
+
+        _binding.ivLeftExit.setSafeClickListener { exit() }
+        _binding.ivRightExit.setSafeClickListener { exit() }
+
+    }
+
+    /**
+     * 吸附到屏幕左右边缘
+     */
+    private fun magnetizeToEdge() {
+        val targetX = if (floatingViewLayoutParams.x < screenSize.x / 2) 0 - floatingView.width / 3
+        else (screenSize.x - floatingView.width * 2 / 3)
+
+        val animator = ValueAnimator.ofInt(floatingViewLayoutParams.x, targetX)
+        animator.addUpdateListener { animation ->
+            Log.i(TAG, "animatedValue: ${animation.animatedValue}")
+            updateFloatingWindowAbsPosition(
+                animation.animatedValue as Int, floatingViewLayoutParams.y
+            )
+        }
+        animator.interpolator = AccelerateDecelerateInterpolator()
+        animator.duration = 200
+        animator.start()
+    }
+
+    /**
+     * 显示全部的悬浮窗
+     *
+     * @param isLeft 是否在屏幕左侧
+     */
+    private fun showCompleteViews(isLeft: Boolean = true) {
+        hiddenState = false
+
+        // 在屏幕左侧展示右边按钮，在右侧展示左边按钮
+        if (isLeft) {
+            _binding.layoutRightMore.visibility = View.VISIBLE
+            _binding.layoutLeftMore.visibility = View.GONE
+            setStateAndBackground(State.LEFT)
+        } else {
+            _binding.layoutRightMore.visibility = View.GONE
+            _binding.layoutLeftMore.visibility = View.VISIBLE
+            setStateAndBackground(State.RIGHT)
+        }
+    }
+
+    /**
+     * 隐藏其他按钮，仅显示主图标
+     */
+    private fun hiddenOtherViews() {
+        hiddenState = true
+
+        _binding.layoutRightMore.visibility = View.GONE
+        _binding.layoutLeftMore.visibility = View.GONE
+    }
+
+    private fun setBackground(state: State) {
+        floatingView.background = when (state) {
+            State.LEFT -> AppCompatResources.getDrawable(
+                this, R.drawable.shape_floating_window_left_bg
+            )
+
+            State.RIGHT -> AppCompatResources.getDrawable(
+                this, R.drawable.shape_floating_window_right_bg
+            )
+
+            else -> AppCompatResources.getDrawable(this, R.drawable.shape_floating_window_bg)
+        }
+    }
+
+    private fun setStateAndBackground(state: State) {
+        this.posState = state
+        setBackground(state)
     }
 
     override fun onDestroy() {
@@ -160,10 +282,7 @@ class FloatWindowService : Service() {
         this.startForeground(0x5252, notification)
     }
 
-    private fun configWindowManagerParam(
-        @Px width: Int,
-        @Px height: Int
-    ): WindowManager.LayoutParams {
+    private fun configWindowManagerParam(): WindowManager.LayoutParams {
         return WindowManager.LayoutParams().apply {
             this.width = WindowManager.LayoutParams.WRAP_CONTENT
             this.height = WindowManager.LayoutParams.WRAP_CONTENT
@@ -191,9 +310,21 @@ class FloatWindowService : Service() {
         }
     }
 
+    /**
+     * 更新悬浮窗位置，相对坐标
+     */
     private fun updateFloatingWindowPosition(deltaX: Int, deltaY: Int) {
         floatingViewLayoutParams.x += deltaX
         floatingViewLayoutParams.y += deltaY
+        windowManager.updateViewLayout(floatingView, floatingViewLayoutParams)
+    }
+
+    /**
+     * 更新悬浮窗位置，绝对值坐标
+     */
+    private fun updateFloatingWindowAbsPosition(x: Int, y: Int) {
+        floatingViewLayoutParams.x = x
+        floatingViewLayoutParams.y = y
         windowManager.updateViewLayout(floatingView, floatingViewLayoutParams)
     }
 
@@ -246,5 +377,9 @@ class FloatWindowService : Service() {
 //        } else {
 //            onOrientationChanged(true)
 //        }
+    }
+
+    internal enum class State {
+        NONE, LEFT, RIGHT
     }
 }

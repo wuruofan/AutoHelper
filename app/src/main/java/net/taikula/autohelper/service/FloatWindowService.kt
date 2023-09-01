@@ -14,9 +14,8 @@ import android.os.Looper
 import android.util.Log
 import android.view.*
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.LinearInterpolator
 import androidx.appcompat.content.res.AppCompatResources
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
 import net.taikula.autohelper.R
 import net.taikula.autohelper.databinding.FloatingWindowBinding
 import net.taikula.autohelper.helper.MediaProjectionHelper
@@ -120,11 +119,11 @@ class FloatWindowService : Service() {
                         if (isMoving) {
                             isMoving = false
 
-                            magnetizeToEdge()
+                            animatedMagnetizeToEdge()
                         } else {
                             // 点击事件
                             if (hiddenState) {
-                                showCompleteViews(x < screenSize.x / 2)
+                                animatedShowFromEdge(x < screenSize.x / 2)
                             } else {
                                 hiddenOtherViews()
                             }
@@ -160,8 +159,8 @@ class FloatWindowService : Service() {
         })
 
         // 界面渲染完后吸附到屏幕边缘
-        MainScope().launch {
-            magnetizeToEdge()
+        Handler(Looper.getMainLooper()).post {
+            animatedMagnetizeToEdge()
         }
     }
 
@@ -192,13 +191,13 @@ class FloatWindowService : Service() {
     /**
      * 吸附到屏幕左右边缘
      */
-    private fun magnetizeToEdge() {
+    private fun animatedMagnetizeToEdge() {
         val targetX = if (floatingViewLayoutParams.x < screenSize.x / 2) 0 - floatingView.width / 3
         else (screenSize.x - floatingView.width * 2 / 3)
 
         val animator = ValueAnimator.ofInt(floatingViewLayoutParams.x, targetX)
         animator.addUpdateListener { animation ->
-            Log.i(TAG, "animatedValue: ${animation.animatedValue}")
+//            Log.i(TAG, "animatedValue: ${animation.animatedValue}")
             updateFloatingWindowAbsPosition(
                 animation.animatedValue as Int, floatingViewLayoutParams.y
             )
@@ -206,6 +205,39 @@ class FloatWindowService : Service() {
         animator.interpolator = AccelerateDecelerateInterpolator()
         animator.duration = 200
         animator.start()
+    }
+
+    /**
+     * 边缘吸附时点击展开
+     */
+    private fun animatedShowFromEdge(isLeft: Boolean = true) {
+        showCompleteViews(isLeft)
+
+        // width 生效后再触发动画避免 width 值未更新导致位置计算错误
+        Handler(Looper.getMainLooper()).post {
+            val targetX = if (isLeft)
+                0
+            else
+                screenSize.x - floatingView.width
+
+            val animator = ValueAnimator.ofInt(floatingViewLayoutParams.x, targetX)
+            animator.addUpdateListener { animation ->
+                updateFloatingWindowAbsPosition(
+                    animation.animatedValue as Int, floatingViewLayoutParams.y
+                )
+            }
+            animator.interpolator = LinearInterpolator()
+            animator.duration = 200
+            animator.start()
+
+        }
+    }
+
+    /**
+     * 展开恢复到边缘吸附
+     */
+    private fun animatedHideToEdge() {
+
     }
 
     /**
@@ -218,12 +250,12 @@ class FloatWindowService : Service() {
 
         // 在屏幕左侧展示右边按钮，在右侧展示左边按钮
         if (isLeft) {
-            _binding.layoutRightMore.visibility = View.VISIBLE
-            _binding.layoutLeftMore.visibility = View.GONE
+            _binding.layoutLeftMore.visibility = View.VISIBLE
+            _binding.layoutRightMore.visibility = View.GONE
             setStateAndBackground(State.LEFT)
         } else {
-            _binding.layoutRightMore.visibility = View.GONE
-            _binding.layoutLeftMore.visibility = View.VISIBLE
+            _binding.layoutLeftMore.visibility = View.GONE
+            _binding.layoutRightMore.visibility = View.VISIBLE
             setStateAndBackground(State.RIGHT)
         }
     }

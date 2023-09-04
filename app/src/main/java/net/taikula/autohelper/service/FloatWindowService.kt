@@ -1,5 +1,7 @@
 package net.taikula.autohelper.service
 
+import android.animation.Animator
+import android.animation.Animator.AnimatorListener
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.app.*
@@ -37,11 +39,39 @@ class FloatWindowService : Service() {
 
     private var isLandscape = false
 
+    private val mainHandler: Handler by lazy { Handler(Looper.getMainLooper()) }
+
+    /**
+     * 悬浮窗展开时自动隐藏动画
+     */
+    private val autoHideRunnable = Runnable() {
+        hiddenOtherViews()
+        animatedMagnetizeToEdge()
+    }
+
+    /**
+     * 悬浮窗吸附边缘隐藏时不可见的宽度
+     */
+    private var hiddenSize = INVALID_VALUE
+
+    /**
+     * 悬浮窗未展开时宽度
+     */
+    private var aloneWidth = INVALID_VALUE
+
+    /**
+     * 悬浮窗展开时宽度
+     */
+    private var expandedWidth = INVALID_VALUE
+
     /**
      * 是否吸附边缘隐藏中
      */
     private var hiddenState = false
 
+    /**
+     * 悬浮窗当前左右位置
+     */
     private var posState = State.NONE
 
     private val rotationWatcher = RotationWatchHelper {
@@ -109,6 +139,10 @@ class FloatWindowService : Service() {
                         x = event.rawX.toInt()
                         y = event.rawY.toInt()
                         isMoving = false
+
+                        if (!hiddenState) {
+                            cancelDelayedHideAnimation()
+                        }
                     }
 
                     MotionEvent.ACTION_UP -> {
@@ -122,10 +156,14 @@ class FloatWindowService : Service() {
                             animatedMagnetizeToEdge()
                         } else {
                             // 点击事件
+                            val isLeft = x < screenSize.x / 2
                             if (hiddenState) {
-                                animatedShowFromEdge(x < screenSize.x / 2)
+                                // 未展开时动画展开
+                                animatedShowFromEdge(isLeft)
                             } else {
+                                // 已展开时隐藏到边缘
                                 hiddenOtherViews()
+                                animatedHideToEdge()
                             }
 
                             v?.performClick()
@@ -144,9 +182,16 @@ class FloatWindowService : Service() {
                             y = newY
 
                             if (!hiddenState) {
+                                // 屏幕左侧的时候需要更新悬浮窗 x 坐标，避免脱离手指位置
+                                // fixme: 现在比较僵硬，会突然跳动，增加动画过渡？
+                                if (x < screenSize.x / 2) {
+                                    updateFloatingWindowAbsPosition(
+                                        floatingViewLayoutParams.x + expandedWidth - aloneWidth,
+                                        floatingViewLayoutParams.y
+                                    )
+                                }
                                 hiddenOtherViews()
                             }
-                            setStateAndBackground(State.NONE)
 
                             updateFloatingWindowPosition(deltaX, deltaY)
 
@@ -159,7 +204,12 @@ class FloatWindowService : Service() {
         })
 
         // 界面渲染完后吸附到屏幕边缘
-        Handler(Looper.getMainLooper()).post {
+        mainHandler.post {
+            if (aloneWidth == INVALID_VALUE) {
+                aloneWidth = floatingView.width
+                hiddenSize = aloneWidth / 4
+            }
+
             animatedMagnetizeToEdge()
         }
     }
@@ -192,8 +242,8 @@ class FloatWindowService : Service() {
      * 吸附到屏幕左右边缘
      */
     private fun animatedMagnetizeToEdge() {
-        val targetX = if (floatingViewLayoutParams.x < screenSize.x / 2) 0 - floatingView.width / 3
-        else (screenSize.x - floatingView.width * 2 / 3)
+        val targetX = if (floatingViewLayoutParams.x < screenSize.x / 2) 0 - hiddenSize
+        else (screenSize.x - aloneWidth + hiddenSize)
 
         val animator = ValueAnimator.ofInt(floatingViewLayoutParams.x, targetX)
         animator.addUpdateListener { animation ->
@@ -214,11 +264,15 @@ class FloatWindowService : Service() {
         showCompleteViews(isLeft)
 
         // width 生效后再触发动画避免 width 值未更新导致位置计算错误
-        Handler(Looper.getMainLooper()).post {
+        mainHandler.post {
+            if (expandedWidth == INVALID_VALUE) {
+                expandedWidth = floatingView.width
+            }
+
             val targetX = if (isLeft)
                 0
             else
-                screenSize.x - floatingView.width
+                screenSize.x - expandedWidth
 
             val animator = ValueAnimator.ofInt(floatingViewLayoutParams.x, targetX)
             animator.addUpdateListener { animation ->
@@ -226,6 +280,21 @@ class FloatWindowService : Service() {
                     animation.animatedValue as Int, floatingViewLayoutParams.y
                 )
             }
+            animator.addListener(object : AnimatorListener {
+                override fun onAnimationStart(animation: Animator) {
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    animatedHideToEdge(3000)
+                }
+
+                override fun onAnimationCancel(animation: Animator) {
+                }
+
+                override fun onAnimationRepeat(animation: Animator) {
+                }
+
+            })
             animator.interpolator = LinearInterpolator()
             animator.duration = 200
             animator.start()
@@ -236,8 +305,15 @@ class FloatWindowService : Service() {
     /**
      * 展开恢复到边缘吸附
      */
-    private fun animatedHideToEdge() {
+    private fun animatedHideToEdge(delayMs: Long = 0) {
+        mainHandler.postDelayed(autoHideRunnable, delayMs)
+    }
 
+    /**
+     * 移出延迟的隐藏到边缘动画
+     */
+    private fun cancelDelayedHideAnimation() {
+        mainHandler.removeCallbacks(autoHideRunnable)
     }
 
     /**
@@ -268,6 +344,8 @@ class FloatWindowService : Service() {
 
         _binding.layoutRightMore.visibility = View.GONE
         _binding.layoutLeftMore.visibility = View.GONE
+
+        setStateAndBackground(State.NONE)
     }
 
     private fun setBackground(state: State) {
@@ -413,5 +491,9 @@ class FloatWindowService : Service() {
 
     internal enum class State {
         NONE, LEFT, RIGHT
+    }
+
+    companion object {
+        private const val INVALID_VALUE = -1
     }
 }

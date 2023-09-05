@@ -181,21 +181,23 @@ class FloatWindowService : Service() {
                             x = newX
                             y = newY
 
-                            if (!hiddenState) {
-                                // 屏幕左侧的时候需要更新悬浮窗 x 坐标，避免脱离手指位置
-                                // fixme: 现在比较僵硬，会突然跳动，增加动画过渡？
-                                if (x < screenSize.x / 2) {
-                                    updateFloatingWindowAbsPosition(
-                                        floatingViewLayoutParams.x + expandedWidth - aloneWidth,
-                                        floatingViewLayoutParams.y
-                                    )
-                                }
-                                hiddenOtherViews()
-                            }
-
                             updateFloatingWindowPosition(deltaX, deltaY)
 
                             Log.i(TAG, "moving=$x,$y")
+
+                            if (!hiddenState) {
+                                // 屏幕左侧的时候需要更新悬浮窗 x 坐标，避免脱离手指位置
+                                // fixme: 还有些僵硬、掉帧的感觉
+                                mainHandler.post {
+                                    if (x < screenSize.x / 2) {
+                                        updateFloatingWindowAbsPosition(
+                                            floatingViewLayoutParams.x + expandedWidth - aloneWidth,
+                                            floatingViewLayoutParams.y
+                                        )
+                                    }
+                                    hiddenOtherViews()
+                                }
+                            }
                         }
                     }
                 }

@@ -448,6 +448,7 @@ class FloatWindowService : Service() {
     }
 
     private fun exit() {
+        cancelDelayedHideAnimation()
         stopSelf()
         backToActivity()
     }

@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.graphics.Point
+import android.graphics.drawable.Animatable
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -222,13 +223,21 @@ class FloatWindowService : Service() {
     private fun initViewClickListeners() {
         floatingView.isClickable = true
 
+        val animatable = (_binding.ivMain.drawable as? Animatable)
+
         // 运行/停止按钮事件
         val runStopListener: () -> Unit = {
             Log.w(TAG, "screenshot clicked!!")
             if (MediaProjectionHelper.instance?.isTimerTicking == true) {
                 MediaProjectionHelper.instance?.stopTimer()
+                _binding.ivLeftRunStop.isSelected = false
+                _binding.ivRightRunStop.isSelected = false
+//                animatable?.stop()
             } else {
-                MediaProjectionHelper.instance?.startTimer(1678)
+                MediaProjectionHelper.instance?.startTimer()
+                _binding.ivLeftRunStop.isSelected = true
+                _binding.ivRightRunStop.isSelected = true
+//                animatable?.start()
             }
         }
 

@@ -237,7 +237,7 @@ class MediaProjectionHelper private constructor(
         imageReadyCallback = callback
     }
 
-    fun startTimer(period: Long) {
+    fun startTimer(period: Long = 1678) {
         if (isTimerTicking) return
 
         isTimerTicking = true

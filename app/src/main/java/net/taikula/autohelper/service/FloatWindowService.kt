@@ -19,6 +19,7 @@ import android.view.*
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.LinearInterpolator
 import androidx.appcompat.content.res.AppCompatResources
+import net.taikula.autohelper.MainApp
 import net.taikula.autohelper.R
 import net.taikula.autohelper.databinding.FloatingWindowBinding
 import net.taikula.autohelper.helper.MediaProjectionHelper
@@ -81,7 +82,7 @@ class FloatWindowService : Service() {
 //        resetVirtualDisplay()
         MediaProjectionHelper.instance?.isLandscape = isLandscape
 
-        Handler(Looper.getMainLooper()).post {
+        mainHandler.post {
             onOrientationChanged(isLandscape)
         }
     }
@@ -359,6 +360,9 @@ class FloatWindowService : Service() {
         setStateAndBackground(State.NONE)
     }
 
+    /**
+     * 设置悬浮窗背景
+     */
     private fun setBackground(state: State) {
         floatingView.background = when (state) {
             State.LEFT -> AppCompatResources.getDrawable(
@@ -373,6 +377,9 @@ class FloatWindowService : Service() {
         }
     }
 
+    /**
+     * 设置悬浮窗位置状态和背景
+     */
     private fun setStateAndBackground(state: State) {
         this.posState = state
         setBackground(state)
@@ -380,6 +387,9 @@ class FloatWindowService : Service() {
 
     override fun onDestroy() {
         stopForeground(STOP_FOREGROUND_REMOVE)
+
+        cancelDelayedHideAnimation()
+
         windowManager.removeView(floatingView)
 
         rotationWatcher.removeRotationWatcher()
@@ -395,6 +405,9 @@ class FloatWindowService : Service() {
 //        super.onConfigurationChanged(newConfig)
 //    }
 
+    /**
+     * 启动前台通知栏
+     */
     private fun startForeground() {
         val notification =
             Notification.Builder(this, net.taikula.autohelper.MainApp.NOTIFICATION_CHANNEL_ID)
@@ -403,6 +416,9 @@ class FloatWindowService : Service() {
         this.startForeground(0x5252, notification)
     }
 
+    /**
+     * 配置悬浮窗参数
+     */
     private fun configWindowManagerParam(): WindowManager.LayoutParams {
         return WindowManager.LayoutParams().apply {
             this.width = WindowManager.LayoutParams.WRAP_CONTENT
@@ -449,6 +465,9 @@ class FloatWindowService : Service() {
         windowManager.updateViewLayout(floatingView, floatingViewLayoutParams)
     }
 
+    /**
+     * 回到 activity
+     */
     private fun backToActivity() {
 //        val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
 //        activityManager.moveTaskToFront()
@@ -456,8 +475,10 @@ class FloatWindowService : Service() {
         startActivity(intent)
     }
 
+    /**
+     * 退出服务
+     */
     private fun exit() {
-        cancelDelayedHideAnimation()
         stopSelf()
         backToActivity()
     }

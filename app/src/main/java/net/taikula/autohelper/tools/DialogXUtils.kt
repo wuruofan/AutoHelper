@@ -18,12 +18,12 @@ object DialogXUtils {
     /**
      * 显示信息提示框，类似 toast
      */
-    fun showPopTip(context: Context, title: String) {
+    fun showPopTip(context: Context, title: String, timeMs: Long = 1500) {
         PopTip.build()
             .setMessage(title)
             .setRadius(RADIUS_100)
             .setTheme(DialogX.THEME.AUTO)
-            .autoDismiss(1500)
+            .autoDismiss(timeMs)
 //            .setMessageTextInfo(TextInfo().apply { fontColor = context.resources.getColor(R.color.design_default_color_on_primary, context.theme) })
             .show()
 

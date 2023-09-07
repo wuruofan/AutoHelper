@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import com.google.android.material.color.DynamicColors
+import com.kongzue.dialogx.DialogX
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import net.taikula.autohelper.data.ClickRepository
@@ -29,6 +30,9 @@ class MainApp : Application() {
 
         // 创建通知频道
         createNotificationChannel(this)
+
+        // 初始化
+        DialogX.init(this);
     }
 
     /**

@@ -666,6 +666,10 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     override fun onResume() {
         super.onResume()
         binding.fabRun.isSelected = MediaProjectionHelper.isRunning
+
+        if (MediaProjectionHelper.isRunning) {
+            DialogXUtils.showPopTip(this, "屏幕识别运行中，请勿变更或修改配置文件！", 2000)
+        }
     }
 
     override fun onDestroy() {

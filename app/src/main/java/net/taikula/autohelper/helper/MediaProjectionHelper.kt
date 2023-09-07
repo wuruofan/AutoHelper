@@ -60,14 +60,14 @@ class MediaProjectionHelper private constructor(
     var isLandscape = false
 
     @Volatile
-    var isCapturing = false
+    private var isCapturing = false
 
     @Volatile
-    var isTimerTicking = false
+    private var isTimerTicking = false
 
-    var timer = Timer("media_projection")
+    private var timer = Timer("media_projection")
 
-    var timerJob: Job? = null
+    private var timerJob: Job? = null
 
     private var imageReader: ImageReader? = null
     private var imageReadyCallback: ImageReadyCallback? = callback
@@ -311,7 +311,18 @@ class MediaProjectionHelper private constructor(
         var instance: MediaProjectionHelper? = null
             private set
 
-        // 单例参考：https://juejin.cn/post/6844903590545326088
+        /**
+         * 是否在运行
+         */
+        var isRunning: Boolean = false
+            get() = instance?.isTimerTicking == true
+            private set
+
+
+        /**
+         * 初始化单例
+         * [单例参考](https://juejin.cn/post/6844903590545326088)
+         */
         fun initInstance(
             activity: ComponentActivity,
             @WorkerThread callback: ImageReadyCallback? = null
@@ -321,7 +332,10 @@ class MediaProjectionHelper private constructor(
             }
         }
 
-        fun image2Bitmap(image: Image?): Bitmap? {
+        /**
+         * Image 对象转换成 Bitmap
+         */
+        private fun image2Bitmap(image: Image?): Bitmap? {
             if (image == null) {
                 println("image 为空")
                 return null

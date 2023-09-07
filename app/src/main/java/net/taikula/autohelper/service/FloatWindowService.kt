@@ -229,7 +229,7 @@ class FloatWindowService : Service() {
         // 运行/停止按钮事件
         val runStopListener: () -> Unit = {
             Log.w(TAG, "screenshot clicked!!")
-            if (MediaProjectionHelper.instance?.isTimerTicking == true) {
+            if (MediaProjectionHelper.isRunning) {
                 MediaProjectionHelper.instance?.stopTimer()
                 _binding.ivLeftRunStop.isSelected = false
                 _binding.ivRightRunStop.isSelected = false
@@ -394,7 +394,7 @@ class FloatWindowService : Service() {
 
         rotationWatcher.removeRotationWatcher()
 
-        if (MediaProjectionHelper.instance?.isTimerTicking == true) {
+        if (MediaProjectionHelper.isRunning) {
             MediaProjectionHelper.instance?.stopTimer()
         }
         super.onDestroy()
@@ -410,8 +410,9 @@ class FloatWindowService : Service() {
      */
     private fun startForeground() {
         val notification =
-            Notification.Builder(this, net.taikula.autohelper.MainApp.NOTIFICATION_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground).setContentText("识别屏幕中...")
+            Notification.Builder(this, MainApp.NOTIFICATION_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle("屏幕识别")
                 .build()
         this.startForeground(0x5252, notification)
     }

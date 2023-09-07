@@ -172,6 +172,13 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     private fun initFabClickListeners() {
         // 运行按钮
         binding.fabRun.setOnClickListener {
+            if (MediaProjectionHelper.isRunning) {
+                stopService(Intent(this, FloatWindowService::class.java))
+                binding.fabRun.isSelected = false
+
+                return@setOnClickListener
+            }
+
             // 辅助功能权限
             if (!AccessibilityUtils.isPermissionGranted(
                     ClickAccessibilityService::class.java.name, this
@@ -658,6 +665,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 
     override fun onResume() {
         super.onResume()
+        binding.fabRun.isSelected = MediaProjectionHelper.isRunning
     }
 
     override fun onDestroy() {

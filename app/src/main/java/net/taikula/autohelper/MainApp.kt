@@ -24,17 +24,22 @@ class MainApp : Application() {
         super.onCreate()
         appContext = applicationContext
 
+        // 动态主题颜色
         DynamicColors.applyToActivitiesIfAvailable(this)
 
+        // 创建通知频道
         createNotificationChannel(this)
     }
 
+    /**
+     * 创建通知频道
+     */
     private fun createNotificationChannel(context: Context) {
         val notificationManager =
             context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         val notificationChannel = NotificationChannel(
-            net.taikula.autohelper.MainApp.Companion.NOTIFICATION_CHANNEL_ID,
-            "正在识别屏幕...",
+            NOTIFICATION_CHANNEL_ID,
+            "运行状态",
             NotificationManager.IMPORTANCE_DEFAULT
         )
         notificationChannel.setSound(null, null)
@@ -46,6 +51,6 @@ class MainApp : Application() {
         lateinit var appContext: Context
             private set
 
-        const val NOTIFICATION_CHANNEL_ID = "running"
+        const val NOTIFICATION_CHANNEL_ID = "${BuildConfig.APPLICATION_ID}_Channel"
     }
 }

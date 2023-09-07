@@ -68,13 +68,6 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
         ClickViewModel((application as MainApp).repository)
     }
 
-    private var currentClickTask: ClickTask? = null
-
-    /**
-     * 检查上一次点击是否成功的标志位
-     */
-    private var lastClickCheck = false
-
     /**
      * 点击数据 recyclerview 的 adapter
      */
@@ -567,7 +560,8 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
             binding.fabRun.enable(allData.isNotEmpty())
 
             clickDataAdapter.setList(allData)
-            currentClickTask = ClickTask(allData)
+
+            FloatWindowService.currentTask = ClickTask(allData)
         }
     }
 
@@ -576,9 +570,12 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
             onRestoreInstanceState(savedInstanceState)
             setImageReadyCallback { bitmap ->
                 mainScope.launch {
-                    val clickTask = currentClickTask ?: return@launch
+                    val clickTask = FloatWindowService.currentTask ?: return@launch
 
-                    Log.w(TAG, "next task: $clickTask, last click check: $lastClickCheck")
+                    Log.w(
+                        TAG,
+                        "next task: $clickTask, last click check: ${FloatWindowService.lastClickCheck}"
+                    )
 
                     if (bitmap != null) {
                         val doodleBitmap =
@@ -613,7 +610,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                             Log.w(TAG, "get random click point: $point")
                             ClickAccessibilityService.accessibilityService?.click(point.x, point.y)
 
-                            lastClickCheck = true
+                            FloatWindowService.lastClickCheck = true
 
                             // 这里不要 toast，会遮挡屏幕截图，导致检查是否点击成功判断为成功！
 //                            Toast.makeText(
@@ -624,11 +621,11 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                         } else {
                             // 检查上一次点击事件是否成功
                             // 和当前图片不一致则认为上次点击成功了，此时再执行 runningCount++
-                            if (lastClickCheck) {
+                            if (FloatWindowService.lastClickCheck) {
                                 Log.i(TAG, "last click success, do next!")
 
                                 clickTask.runningCount++
-                                lastClickCheck = false
+                                FloatWindowService.lastClickCheck = false
                             }
                         }
                     } else {

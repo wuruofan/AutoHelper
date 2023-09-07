@@ -24,6 +24,7 @@ import net.taikula.autohelper.R
 import net.taikula.autohelper.databinding.FloatingWindowBinding
 import net.taikula.autohelper.helper.MediaProjectionHelper
 import net.taikula.autohelper.helper.RotationWatchHelper
+import net.taikula.autohelper.model.ClickTask
 import net.taikula.autohelper.tools.DisplayUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.tools.ViewUtils.setSafeClickListener
@@ -530,5 +531,16 @@ class FloatWindowService : Service() {
 
     companion object {
         private const val INVALID_VALUE = -1
+
+        /**
+         * 当前点击任务
+         */
+        var currentTask: ClickTask? = null
+
+        /**
+         * 检查上一次点击是否成功的标志位
+         */
+        var lastClickCheck = false
+
     }
 }

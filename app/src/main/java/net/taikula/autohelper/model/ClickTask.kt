@@ -9,10 +9,10 @@ import net.taikula.autohelper.data.db.entity.ClickData
 class ClickTask(clickData: List<ClickData>) {
     var runningCount = 0
 
-    val currentIndex
+    private val currentIndex
         get() = if (clickList.isEmpty()) 0 else runningCount % clickList.size
 
-    val clickList: List<ClickData> = clickData
+    private val clickList: List<ClickData> = clickData
 
     val currentClickArea: ClickArea
         get() = clickList[currentIndex].clickArea

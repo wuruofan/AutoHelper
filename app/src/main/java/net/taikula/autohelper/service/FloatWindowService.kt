@@ -215,6 +215,7 @@ class FloatWindowService : Service() {
             }
 
             animatedMagnetizeToEdge()
+            hiddenState = true
         }
     }
 

@@ -23,6 +23,13 @@ class ClickTask(clickData: List<ClickData>) {
     val currentClickPoint: ClickArea.PointInfo
         get() = clickList[currentIndex].clickArea.randomPoint()
 
+    /**
+     * 重置点击计数器
+     */
+    fun reset() {
+        runningCount = 0
+    }
+
     override fun toString(): String {
         return "[ClickTask: currentIndex=$currentIndex, runningCount=$runningCount, clickArea=${currentClickArea.outlineRect()}]"
     }

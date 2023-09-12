@@ -236,6 +236,7 @@ class FloatWindowService : Service() {
             Log.w(TAG, "screenshot clicked!!")
             if (mediaProjectionHelper?.isRunning == true) {
                 mediaProjectionHelper?.stopTimer()
+                currentTask?.reset() // 重置任务计数
 
                 _binding.ivLeftRunStop.isSelected = false
                 _binding.ivRightRunStop.isSelected = false
@@ -402,6 +403,7 @@ class FloatWindowService : Service() {
 
         if (mediaProjectionHelper?.isRunning == true) {
             mediaProjectionHelper?.stopTimer()
+            currentTask?.reset() // 重置任务计数
         }
         super.onDestroy()
     }

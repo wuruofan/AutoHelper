@@ -424,6 +424,16 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                     ) {
                         DialogXUtils.showPopTip("重命名失败")
                     }
+                } else {
+                    var i = start.coerceAtMost(pos)
+                    while (i <= start.coerceAtLeast(pos)) {
+                        val data = clickDataAdapter.data[i]
+                        data.sequence = i
+                        clickViewModel.update(data) {
+                            Log.i(TAG, "update data $data success!")
+                        }
+                        i++
+                    }
                 }
 
                 start = -1

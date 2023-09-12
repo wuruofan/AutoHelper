@@ -16,7 +16,7 @@ import net.taikula.autohelper.tools.DisplayUtils
 class ClickDataAdapter : BaseQuickAdapter<ClickData, BaseViewHolder>(R.layout.config_item_view),
     DraggableModule {
     override fun convert(holder: BaseViewHolder, item: ClickData) {
-        holder.setText(R.id.tv_item_index, item.index.toString())
+        holder.setText(R.id.tv_item_index, item.sequence.toString())
 
         item.clickArea.run {
             if (bitmap != null) {

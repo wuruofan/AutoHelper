@@ -11,7 +11,7 @@ interface ClickDao {
     @Query("select * from ${ClickData.TABLE_NAME}")
     fun getAllClickData(): Flow<List<ClickData>>
 
-    @Query("select * from ${ClickData.TABLE_NAME} where config_id = :configId")
+    @Query("select * from ${ClickData.TABLE_NAME} where config_id = :configId order by sequence asc")
     fun getAllByConfigId(configId: Int): Flow<List<ClickData>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

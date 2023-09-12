@@ -51,10 +51,11 @@ class MainApp : Application() {
     }
 
     companion object {
+        const val NOTIFICATION_CHANNEL_ID = "${BuildConfig.APPLICATION_ID}_Channel"
+
         @SuppressLint("StaticFieldLeak")
         lateinit var appContext: Context
             private set
 
-        const val NOTIFICATION_CHANNEL_ID = "${BuildConfig.APPLICATION_ID}_Channel"
     }
 }

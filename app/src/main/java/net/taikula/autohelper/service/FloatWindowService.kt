@@ -44,6 +44,9 @@ class FloatWindowService : Service() {
 
     private val mainHandler: Handler by lazy { Handler(Looper.getMainLooper()) }
 
+    private val mediaProjectionHelper: MediaProjectionHelper?
+        get() = MediaProjectionHelper.instance
+
     /**
      * 悬浮窗展开时自动隐藏动画
      */
@@ -81,7 +84,7 @@ class FloatWindowService : Service() {
         isLandscape = it == Surface.ROTATION_90 || it == Surface.ROTATION_270
         Log.w(TAG, "RotationWatcher orientation: $it, isLandscape: $isLandscape")
 //        resetVirtualDisplay()
-        MediaProjectionHelper.instance?.isLandscape = isLandscape
+        mediaProjectionHelper?.isLandscape = isLandscape
 
         mainHandler.post {
             onOrientationChanged(isLandscape)
@@ -231,13 +234,14 @@ class FloatWindowService : Service() {
         // 运行/停止按钮事件
         val runStopListener: () -> Unit = {
             Log.w(TAG, "screenshot clicked!!")
-            if (MediaProjectionHelper.isRunning) {
-                MediaProjectionHelper.instance?.stopTimer()
+            if (mediaProjectionHelper?.isRunning == true) {
+                mediaProjectionHelper?.stopTimer()
+
                 _binding.ivLeftRunStop.isSelected = false
                 _binding.ivRightRunStop.isSelected = false
 //                animatable?.stop()
             } else {
-                MediaProjectionHelper.instance?.startTimer()
+                mediaProjectionHelper?.startTimer()
                 _binding.ivLeftRunStop.isSelected = true
                 _binding.ivRightRunStop.isSelected = true
 //                animatable?.start()
@@ -396,8 +400,8 @@ class FloatWindowService : Service() {
 
         rotationWatcher.removeRotationWatcher()
 
-        if (MediaProjectionHelper.isRunning) {
-            MediaProjectionHelper.instance?.stopTimer()
+        if (mediaProjectionHelper?.isRunning == true) {
+            mediaProjectionHelper?.stopTimer()
         }
         super.onDestroy()
     }

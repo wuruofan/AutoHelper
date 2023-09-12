@@ -1,6 +1,5 @@
 package net.taikula.autohelper.tools
 
-import android.content.Context
 import android.util.Log
 import android.view.View
 import com.kongzue.dialogx.DialogX
@@ -18,7 +17,7 @@ object DialogXUtils {
     /**
      * 显示信息提示框，类似 toast
      */
-    fun showPopTip(context: Context, title: String, timeMs: Long = 1500) {
+    fun showPopTip(title: String, timeMs: Long = 1500) {
         PopTip.build()
             .setMessage(title)
             .setRadius(RADIUS_100)
@@ -33,7 +32,6 @@ object DialogXUtils {
      * 显示消息提示对话框
      */
     fun showMessageDialog(
-        context: Context,
         title: String,
         message: String,
         onOkAction: () -> Unit = {},
@@ -61,7 +59,7 @@ object DialogXUtils {
      * @param onOkAction 返回 true 时对话框不消失
      */
     fun showInputDialog(
-        context: Context, title: String, text: String,
+        title: String, text: String,
         onOkAction: (String) -> Boolean = { false },
         onCancelAction: () -> Unit = {}
     ) {

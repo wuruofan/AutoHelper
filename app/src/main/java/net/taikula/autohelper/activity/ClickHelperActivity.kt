@@ -115,7 +115,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                 val imagePoint = BitmapUtils.getImageSize(this@ClickHelperActivity, uri)
 
                 if (screenPoint != imagePoint && screenPoint != imagePoint?.invert()) {
-                    DialogXUtils.showPopTip(this@ClickHelperActivity, "这好像不是当前手机的截图哦！")
+                    DialogXUtils.showPopTip("这好像不是当前手机的截图哦！")
                     return@registerForActivityResult
                 }
 
@@ -165,7 +165,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     private fun initFabClickListeners() {
         // 运行按钮
         binding.fabRun.setOnClickListener {
-            if (MediaProjectionHelper.isRunning) {
+            if (mediaProjectionHelper.isRunning) {
                 stopService(Intent(this, FloatWindowService::class.java))
                 binding.fabRun.isSelected = false
 
@@ -214,7 +214,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
         // 添加截图按钮
         binding.fabAddConfig.setOnClickListener {
             selectPhotoActivityLauncher.launch(null)
-            DialogXUtils.showPopTip(this@ClickHelperActivity, "请选择一张当前手机的屏幕截图！")
+            DialogXUtils.showPopTip("请选择一张当前手机的屏幕截图！")
         }
 
         // 帮助按钮
@@ -262,19 +262,19 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
             clickViewModel.insert(ConfigData(name = name)) { id ->
                 Log.i(TAG, "insert success $id")
                 clickViewModel.updateCurrentConfigId(id.toInt())
-                DialogXUtils.showPopTip(this, "$name 已添加")
+                DialogXUtils.showPopTip("$name 已添加")
             }
         }
 
         // 编辑配置按钮
         binding.modConfigImageView.disable()
         binding.modConfigImageView.setSafeClickListener {
-            DialogXUtils.showInputDialog(this,
+            DialogXUtils.showInputDialog(
                 "重命名",
                 getClickConfigData(binding.spinnerView.selectedItemPosition)?.name ?: "",
                 {
                     if (it.length > 8) {
-                        DialogXUtils.showPopTip(this@ClickHelperActivity, "名字太长啦(>8)！")
+                        DialogXUtils.showPopTip("名字太长啦(>8)！")
                         true
                     } else {
                         val configData =
@@ -304,7 +304,7 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                 return@setSafeClickListener
             }
 
-            DialogXUtils.showMessageDialog(this, "删除", "是否删除配置【${configName}】？", {
+            DialogXUtils.showMessageDialog("删除", "是否删除配置【${configName}】？", {
                 val configData = spinnerViewIndexConfigDataMap[selectedIndex]
                 val preConfigData = spinnerViewIndexConfigDataMap[selectedIndex - 1]
                 if (configData == null) {
@@ -410,7 +410,6 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 
                 if (pos == start) {
                     DialogXUtils.showInputDialog(
-                        this@ClickHelperActivity,
                         "重命名",
                         clickDataAdapter.data[pos].name,
                         {
@@ -418,13 +417,13 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
                             data.name = it
                             clickViewModel.update(data) {
                                 Log.i(TAG, "update data $data success!")
-                                DialogXUtils.showPopTip(this@ClickHelperActivity, "重命名成功")
+                                DialogXUtils.showPopTip("重命名成功")
                             }
                             false
-                        },
-                        {
-                            DialogXUtils.showPopTip(this@ClickHelperActivity, "重命名失败")
-                        })
+                        }
+                    ) {
+                        DialogXUtils.showPopTip("重命名失败")
+                    }
                 }
 
                 start = -1
@@ -568,6 +567,10 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
     private fun initMediaProjectionHelper(savedInstanceState: Bundle?) {
         mediaProjectionHelper = MediaProjectionHelper.initInstance(this).apply {
             onRestoreInstanceState(savedInstanceState)
+            setPermissionCallback {
+                startService(Intent(this@ClickHelperActivity, FloatWindowService::class.java))
+                moveTaskToBack(true)
+            }
             setImageReadyCallback { bitmap ->
                 mainScope.launch {
                     val clickTask = FloatWindowService.currentTask ?: return@launch
@@ -636,6 +639,13 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
         }
     }
 
+    private fun destroyMediaProjectionHelper() {
+        if (mediaProjectionHelper.isRunning) {
+            stopService(Intent(this, FloatWindowService::class.java))
+        }
+
+        mediaProjectionHelper.destroy()
+    }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.activity_main_menu, menu)
@@ -662,15 +672,15 @@ class ClickHelperActivity : BaseCompatActivity<ActivityClickHelperBinding>() {
 
     override fun onResume() {
         super.onResume()
-        binding.fabRun.isSelected = MediaProjectionHelper.isRunning
+        binding.fabRun.isSelected = mediaProjectionHelper.isRunning
 
-        if (MediaProjectionHelper.isRunning) {
-            DialogXUtils.showPopTip(this, "屏幕识别运行中，请勿变更或修改配置文件！", 2000)
+        if (mediaProjectionHelper.isRunning) {
+            DialogXUtils.showPopTip("屏幕识别运行中，请勿变更或修改配置文件！", 2000)
         }
     }
 
     override fun onDestroy() {
-        mediaProjectionHelper.destroy()
+        destroyMediaProjectionHelper()
         mainScope.cancel()
         super.onDestroy()
     }

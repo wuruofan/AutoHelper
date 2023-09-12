@@ -24,11 +24,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import net.taikula.autohelper.service.FloatWindowService
+import net.taikula.autohelper.tools.DialogXUtils
 import net.taikula.autohelper.tools.DisplayUtils
 import net.taikula.autohelper.tools.Extensions.TAG
 import net.taikula.autohelper.tools.Extensions.launchPeriodicAsync
-import java.lang.ref.WeakReference
 import java.util.*
 
 typealias ImageReadyCallback = (Bitmap?) -> Unit
@@ -36,18 +35,15 @@ typealias ImageReadyCallback = (Bitmap?) -> Unit
 /**
  * 手机截屏/录屏功能
  * [参考链接](https://github.com/android/media-samples/blob/6b205c3db94a7f4a0f73fe27fc6139125c24e9b8/ScreenCapture/Application/src/main/java/com/example/android/screencapture/ScreenCaptureFragment.java)
+ * @param activity 需要触发录屏的 activity，需要申请权限使用，必须提前注册 launcher 否则报错
  */
 @SuppressLint("WrongConstant")
-class MediaProjectionHelper private constructor(
-    var activity: ComponentActivity,
-//    activityResultCallback: ActivityResultCallback<ActivityResult>,
-    @WorkerThread callback: ImageReadyCallback? = null
-) {
+class MediaProjectionHelper private constructor(val activity: ComponentActivity) {
     private var screenCaptureResultCode = 0
     private var screenCaptureResultData: Intent? = null
 
-    private var mediaProjection: MediaProjection? = null
     private var virtualDisplay: VirtualDisplay? = null
+    private var mediaProjection: MediaProjection? = null
     private val mediaProjectionManager: MediaProjectionManager by lazy {
         activity.getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
     }
@@ -55,52 +51,118 @@ class MediaProjectionHelper private constructor(
     private val screenSize = DisplayUtils.getRealScreenSize(activity)
     private var screenDpi = DisplayUtils.getScreenDensity(activity)
 
-    private var weakActivity = WeakReference(activity)
-
     var isLandscape = false
 
+    /**
+     * 是否在运行
+     */
+    var isRunning: Boolean = false
+        get() = isTimerTicking
+        private set
+
+
+    /**
+     * 是否在录制屏幕
+     */
     @Volatile
     private var isCapturing = false
 
+    /**
+     * 定时器是否在运行
+     * 定时器触发时才录制屏幕，设置 [isCapturing] 为 true
+     */
     @Volatile
     private var isTimerTicking = false
 
-    private var timer = Timer("media_projection")
+//    private var timer = Timer("media_projection")
 
+    /**
+     * 定时器任务
+     */
     private var timerJob: Job? = null
 
+    /**
+     * 屏幕读取器
+     */
     private var imageReader: ImageReader? = null
-    private var imageReadyCallback: ImageReadyCallback? = callback
 
+    /**
+     * 屏幕图像准备就绪回调
+     */
+    private var imageReadyCallback: ImageReadyCallback? = null
+
+    /**
+     * 权限申请成功后的回调
+     */
+    private var permissionCallback: ((Boolean) -> Unit)? = null
+
+    /**
+     * 注册请求权限回调，必须在 activity START 之前设置，否则会报错
+     * LifecycleOwners must call register before they are STARTED.
+     */
     private val requestMediaProjectionLauncher =
         activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode != Activity.RESULT_OK) {
                 Log.d(TAG, "request media projection failed!")
+                permissionCallback?.invoke(false)
                 return@registerForActivityResult
             }
 
             screenCaptureResultCode = it.resultCode
             screenCaptureResultData = it.data
 
-            activity.run {
-                startService(Intent(activity, FloatWindowService::class.java))
-                moveTaskToBack(true)
-            }
-
-//            startScreenCapture()
-//            activityResultCallback.onActivityResult(it)
+            permissionCallback?.invoke(true)
         }
 
+    /**
+     * 设置权限申请回调
+     */
+    fun setPermissionCallback(callback: (Boolean) -> Unit) {
+        this.permissionCallback = callback
+    }
+
+    /**
+     * 请求录屏权限
+     */
+    fun requestPermission() {
+        Log.d(TAG, "Requesting confirmation")
+        // This initiates a prompt dialog for the user to confirm screen projection.
+        requestMediaProjectionLauncher.launch(mediaProjectionManager.createScreenCaptureIntent())
+    }
+
+    /**
+     * 是否有录屏权限
+     */
+    fun isPermissionGranted(): Boolean {
+        return screenCaptureResultCode == Activity.RESULT_OK
+    }
+
+    /**
+     * 保存数据
+     */
+    fun onSaveInstanceState(outState: Bundle) {
+        if (screenCaptureResultData != null) {
+            outState.putInt(SCREEN_CAPTURE_STATE_RESULT_CODE, screenCaptureResultCode)
+            outState.putParcelable(SCREEN_CAPTURE_STATE_RESULT_DATA, screenCaptureResultData)
+        }
+    }
+
+    /**
+     * 恢复数据
+     */
+    fun onRestoreInstanceState(inState: Bundle?) {
+        inState?.let {
+            screenCaptureResultCode = it.getInt(SCREEN_CAPTURE_STATE_RESULT_CODE)
+            screenCaptureResultData = it.getParcelable(SCREEN_CAPTURE_STATE_RESULT_DATA)
+        }
+    }
 
     private fun setUpMediaProjection() {
-        if (screenCaptureResultData == null)
-            return
+        if (screenCaptureResultData == null) return
 
         mediaProjection = mediaProjectionManager.getMediaProjection(
-            screenCaptureResultCode,
-            screenCaptureResultData!!
+            screenCaptureResultCode, screenCaptureResultData!!
         )
-
     }
 
     private fun tearDownMediaProjection() {
@@ -109,24 +171,14 @@ class MediaProjectionHelper private constructor(
 
     }
 
-    fun requestPermission() {
-        Log.d(TAG, "Requesting confirmation")
-        // This initiates a prompt dialog for the user to confirm screen projection.
-        requestMediaProjectionLauncher.launch(mediaProjectionManager.createScreenCaptureIntent())
-    }
-
-    fun isPermissionGranted(): Boolean {
-        return screenCaptureResultCode == Activity.RESULT_OK
-    }
-
-    fun startScreenCapture() {
+    fun startScreenCapture(activity: ComponentActivity? = null) {
         if (mediaProjection != null) {
             setUpVirtualDisplay()
         } else if (screenCaptureResultCode != 0 && screenCaptureResultData != null) {
             setUpMediaProjection()
             setUpVirtualDisplay()
         } else {
-            requestPermission()
+            DialogXUtils.showPopTip("尚未申请屏幕录制权限！")
         }
     }
 
@@ -182,8 +234,7 @@ class MediaProjectionHelper private constructor(
     }
 
     fun stopScreenCapture() {
-        if (!isCapturing)
-            return
+        if (!isCapturing) return
 
         virtualDisplay?.release()
         virtualDisplay = null
@@ -215,25 +266,13 @@ class MediaProjectionHelper private constructor(
         stopScreenCapture()
         tearDownMediaProjection()
 
-        activity.stopService(Intent(activity, FloatWindowService::class.java))
+        instance = null
     }
 
-    fun onSaveInstanceState(outState: Bundle) {
-        if (screenCaptureResultData != null) {
-            outState.putInt(SCREEN_CAPTURE_STATE_RESULT_CODE, screenCaptureResultCode)
-            outState.putParcelable(SCREEN_CAPTURE_STATE_RESULT_DATA, screenCaptureResultData)
-        }
-    }
-
-    fun onRestoreInstanceState(inState: Bundle?) {
-        inState?.let {
-            screenCaptureResultCode = it.getInt(SCREEN_CAPTURE_STATE_RESULT_CODE)
-            screenCaptureResultData =
-                it.getParcelable(SCREEN_CAPTURE_STATE_RESULT_DATA)
-        }
-    }
-
-    fun setImageReadyCallback(callback: ImageReadyCallback?) {
+    /**
+     * 设置屏幕图像准备就绪回调
+     */
+    fun setImageReadyCallback(@WorkerThread callback: ImageReadyCallback? = null) {
         imageReadyCallback = callback
     }
 
@@ -293,8 +332,7 @@ class MediaProjectionHelper private constructor(
     fun stopTimer() {
         Log.w(TAG, "stopTimer: isTimerTicking=$isTimerTicking")
         if (!isTimerTicking) return
-        if (isCapturing)
-            stopScreenCapture()
+        if (isCapturing) stopScreenCapture()
 
         timerJob?.cancel()
         timerJob = null
@@ -312,23 +350,14 @@ class MediaProjectionHelper private constructor(
             private set
 
         /**
-         * 是否在运行
-         */
-        var isRunning: Boolean = false
-            get() = instance?.isTimerTicking == true
-            private set
-
-
-        /**
          * 初始化单例
          * [单例参考](https://juejin.cn/post/6844903590545326088)
          */
         fun initInstance(
-            activity: ComponentActivity,
-            @WorkerThread callback: ImageReadyCallback? = null
+            activity: ComponentActivity
         ): MediaProjectionHelper {
             return instance ?: synchronized(this) {
-                instance ?: MediaProjectionHelper(activity, callback).also { instance = it }
+                instance ?: MediaProjectionHelper(activity).also { instance = it }
             }
         }
 
@@ -355,12 +384,9 @@ class MediaProjectionHelper private constructor(
             //接收ByteBuffer数据的Bitmap需要的像素宽度 = Image中图片宽度 + 内存对齐宽度/像素间距
             //每行的对应位置会填充一些无效数据
             //(其实直接写成rowStride/pixelStride也行，按步骤写只是为了让逻辑清晰)
-            val tmpBitmap =
-                Bitmap.createBitmap(
-                    width + rowPadding / pixelStride,
-                    height,
-                    Bitmap.Config.ARGB_8888
-                )
+            val tmpBitmap = Bitmap.createBitmap(
+                width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888
+            )
             tmpBitmap.copyPixelsFromBuffer(buffer)
 
             val lastBitmap = Bitmap.createBitmap(tmpBitmap, 0, 0, width, height) //过滤掉每行像素中的无效数据

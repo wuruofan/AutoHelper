@@ -28,10 +28,11 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     buildFeatures {
         viewBinding true
     }
@@ -47,20 +48,27 @@ android {
         // Inheritance from an interface with '@JvmDefault' members is only allowed with -Xjvm-default option
         freeCompilerArgs += ["-Xjvm-default=all",]
     }
+
+    android.applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "autohelper-${buildType.name}-v${variant.versionName}.apk"
+        }
+    }
+
     namespace 'net.taikula.autohelper'
 }
 
 def glide_version = "4.14.2"
 def room_version = "2.5.0"
 def lifecycle_version = "2.5.1"
+def dialogx_version = "0.0.48"
 
 dependencies {
 
     implementation project(path: ':autojob')
 
     // dialogx
-    def dialogx_version = "0.0.48"
-    implementation "com.kongzue.dialogx:DialogX:0.0.48"
+    implementation "com.kongzue.dialogx:DialogX:${dialogx_version}"
 
     // glide
     implementation("com.github.bumptech.glide:glide:$glide_version")

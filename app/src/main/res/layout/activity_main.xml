@@ -21,6 +21,7 @@
             android:id="@+id/auto_job_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:visibility="gone"
             android:text="@string/auto_job" />
 
         <Button
